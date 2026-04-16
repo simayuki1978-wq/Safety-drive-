@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Toàn Giao Thông - Vì Hạnh Phúc Gia Đình</title>
+    <style>
+        /* デザイン設定 */
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background-color: #fce4ec; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; padding: 20px; text-align: center; }
+        .hidden { display: none; }
+        h1 { color: #d32f2f; font-size: 24px; }
+        p { font-size: 16px; }
+        button { background-color: #d32f2f; color: white; border: none; padding: 15px 25px; margin: 10px; border-radius: 30px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.3s; width: 80%; max-width: 300px; }
+        button:hover { background-color: #b71c1c; transform: scale(1.05); }
+        
+        /* フラッシュカード設定 */
+        .card-container { perspective: 1000px; width: 100%; max-width: 350px; height: 480px; margin: 20px auto; }
+        .card { width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; position: relative; }
+        .card.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .card-front { background: white; border: 4px solid #d32f2f; }
+        .card-back { background: #263238; color: white; transform: rotateY(180deg); border: 4px solid #000; }
+        .card img { width: 90%; max-height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 10px; }
+        .card-back h3 { color: #ff5252; }
+
+        /* クイズ設定 */
+        .quiz-img { width: 100%; max-width: 300px; border-radius: 10px; margin-bottom: 20px; }
+        .final-msg img { width: 100%; border-radius: 20px; margin-top: 20px; }
+        footer { margin-top: 40px; font-size: 12px; color: #888; padding-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="top-page">
+        <h1>Bảo vệ mạng sống<br>Bảo vệ gia đình</h1>
+        <p>Trên đường phố Việt Nam, ngày mai của bạn có được đảm bảo?</p>
+        <img src="images/family.png" alt="Gia đình" style="width: 80%; margin: 20px 0;">
+        <br>
+        <button onclick="showSection('intro-page')">Giới thiệu</button>
+        <button onclick="showSection('flashcard-page')">Thẻ ghi nhớ</button>
+        <button onclick="showSection('quiz-page'); startQuiz();">Trắc nghiệm</button>
+    </div>
+
+    <div id="intro-page" class="hidden">
+        <h2>Xe hai bánh là "Mạng sống mong manh"</h2>
+        <p>Xe đạp và xe máy rất dễ ngã. Không tuân thủ luật lệ không chỉ làm hại bản thân, mà còn biến gia đình yêu thương thành nạn nhân. Đừng để hối hận là quá muộn.</p>
+        <button onclick="showSection('top-page')">Quay lại</button>
+    </div>
+
+    <div id="flashcard-page" class="hidden">
+        <h2>Chạm vào thẻ để xem hậu quả</h2>
+        <div id="card-list"></div>
+        <button onclick="showSection('top-page')">Quay lại trang chủ</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div id="quiz-content">
+            <h2 id="q-title"></h2>
+            <img id="q-img" class="quiz-img" src="">
+            <p id="q-text" style="font-weight: bold;"></p>
+            <div id="q-options"></div>
+        </div>
+        <div id="quiz-result" class="hidden final-msg">
+            <h2>Hãy luôn ghi nhớ</h2>
+            <img src="images/family.png" alt="Gia đình hạnh phúc">
+            <p>Tuân thủ luật giao thông là bảo vệ nụ cười của những người thân yêu.</p>
+            <p style="font-size: 20px; color: #d32f2f;"><strong>Hãy về nhà an toàn ngày hôm nay!</strong></p>
+            <button onclick="showSection('top-page')">Quay lại trang chủ</button>
+        </div>
+    </div>
+
+    <footer>
+        Nguồn hình ảnh: <a href="https://www.irasutoya.com/" target="_blank">Irasutoya</a>
+    </footer>
+</div>
+
+<script>
+    // データの定義 (ベトナム語翻訳版)
+    const safetyData = [
+        { 
+            title: "1. Đội mũ bảo hiểm", 
+            desc: "Lái xe mà không đội mũ bảo hiểm.", 
+            result: "Chấn thương sọ não. Liệt nửa người hoặc mất khả năng ngôn ngữ suốt đời.", 
+            img: "images/helmet.png",
+            resultImg: "images/result_helmet.png" 
+        },
+        { 
+            title: "2. Chấp hành tín hiệu", 
+            desc: "Vượt đèn đỏ hoặc cố tình phóng nhanh.", 
+            result: "Va chạm cực mạnh tại ngã tư. Cuộc đời bạn sẽ chấm dứt ngay tại đó.", 
+            img: "images/signal.png",
+            resultImg: "images/result_signal.png"
+        },
+        { 
+            title: "3. Tốc độ & Lạng lách", 
+            desc: "Phóng nhanh, vượt ẩu, đánh võng trên đường.", 
+            result: "Mất kiểm soát và va chạm. Gãy xương phức tạp hoặc không bao giờ đi lại được nữa.", 
+            img: "images/speed.png",
+            resultImg: "images/result_speed.png"
+        },
+        { 
+            title: "4. Rượu bia khi lái xe", 
+            desc: "Uống rượu bia rồi vẫn cầm lái.", 
+            result: "Trở thành kẻ sát nhân. Phải trả giá bằng sự tự do trong tù tội và sự hối hận cả đời.", 
+            img: "images/alcohol.png",
+            resultImg: "images/result_alcohol.png"
+        },
+        { 
+            title: "5. Sử dụng điện thoại", 
+            desc: "Vừa lái xe vừa nhắn tin hoặc gọi điện.", 
+            result: "Đâm xe mà không kịp phanh. Chỉ vài giây lơ là sẽ cướp đi sinh mạng người khác.", 
+            img: "images/smartphone.png",
+            resultImg: "images/result_smartphone.png"
+        },
+        { 
+            title: "6. Đi ngược chiều", 
+            desc: "Đi ngược chiều để tiết kiệm thời gian.", 
+            result: "Đối đầu trực diện. Sức ép từ va chạm sẽ khiến cơ thể bạn không thể sống sót.", 
+            img: "images/wrongway.png",
+            resultImg: "images/result_wrongway.png"
+        },
+        { 
+            title: "7. Không bật đèn đêm", 
+            desc: "Lái xe trong đêm mà không bật đèn chiếu sáng.", 
+            result: "Các xe lớn không thể thấy bạn. Bạn sẽ bị nghiền nát dưới bánh xe tải.", 
+            img: "images/dark.png",
+            resultImg: "images/result_dark.png"
+        }
+    ];
+
+    // 画面切り替え
+    function showSection(id) {
+        document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        window.scrollTo(0,0);
+        if(id === 'flashcard-page') renderCards();
+    }
+
+    // カード生成
+    function renderCards() {
+        const list = document.getElementById('card-list');
+        list.innerHTML = '';
+        safetyData.forEach(item => {
+            const wrap = document.createElement('div');
+            wrap.className = 'card-container';
+            wrap.innerHTML = `
+                <div class="card" onclick="this.classList.toggle('flipped')">
+                    <div class="card-face card-front">
+                        <h3>${item.title}</h3>
+                        <img src="${item.img}">
+                        <p>${item.desc}</p>
+                        <p style="font-size:12px; color:#888;">(Chạm để xem hậu quả)</p>
+                    </div>
+                    <div class="card-face card-back">
+                        <h3>Hậu quả thảm khốc</h3>
+                        <img src="${item.resultImg}">
+                        <p>${item.result}</p>
+                    </div>
+                </div>`;
+            list.appendChild(wrap);
+        });
+    }
+
+    // クイズ処理
+    let currentQ = 0;
+    function startQuiz() {
+        currentQ = 0;
+        document.getElementById('quiz-content').classList.remove('hidden');
+        document.getElementById('quiz-result').classList.add('hidden');
+        showQ();
+    }
+
+    function showQ() {
+        const item = safetyData[currentQ];
+        document.getElementById('q-title').innerText = "Câu hỏi " + (currentQ + 1);
+        document.getElementById('q-img').src = item.img;
+        document.getElementById('q-text').innerText = "Hành vi này sẽ dẫn đến kết cục gì?";
+        const opts = document.getElementById('q-options');
+        opts.innerHTML = '';
+        
+        const choices = [item.result, "Không có gì xảy ra, tôi vẫn an toàn"];
+        choices.sort(() => Math.random() - 0.5).forEach(text => {
+            const b = document.createElement('button');
+            b.innerText = text;
+            b.onclick = () => {
+                if(text === item.result) {
+                    alert("Chính xác. Đừng bao giờ đánh đổi mạng sống lấy sự tiện lợi.");
+                    currentQ++;
+                    if(currentQ < safetyData.length) showQ();
+                    else {
+                        document.getElementById('quiz-content').classList.add('hidden');
+                        document.getElementById('quiz-result').classList.remove('hidden');
+                    }
+                } else {
+                    alert("Sai rồi! Thực tế tàn khốc hơn bạn nghĩ nhiều.");
+                }
+            };
+            opts.appendChild(b);
+        });
+    }
+</script>
+</body>
+</html>
