@@ -1,145 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safety Driver Lite</title>
+
+<style>
+body { margin:0; background:#222; font-family:sans-serif; text-align:center; }
+canvas { background:#2ecc71; display:block; margin:0 auto; }
+.overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.8); color:white;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+button { padding:10px 20px; font-size:18px; }
+</style>
+</head>
+
+<body>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<div id="start" class="overlay">
+  <h2>Safety Driver</h2>
+  <button onclick="startGame()">START</button>
+</div>
+
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// =====================
+// 状態
+// =====================
+const game = {
+  state: "menu",
+  score: 100,
+  speed: 0,
+  playerX: 200,
+  npcs: []
+};
 
-let gameState = "wait";
-let score = 100;
-let speed = 0;
-let playerX = 280;
-let offset = 0;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-let npcs = [];
 const keys = {};
-
 let lastTime = 0;
 
-// =======================
-// ① UI（alert削除）
-// =======================
-function showOverlay(title, msg) {
-    const div = document.createElement("div");
-    div.className = "overlay";
-    div.innerHTML = `
-        <h2>${title}</h2>
-        <p>${msg}</p>
-        <button onclick="location.reload()">Chơi lại</button>
-    `;
-    document.body.appendChild(div);
-}
+// =====================
+// 入力
+// =====================
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
 
-// =======================
-// ② 衝突判定
-// =======================
-function isColliding(ax, ay, bx, by, w = 40, h = 50) {
-    return (
-        Math.abs(ax - bx) < w &&
-        Math.abs(ay - by) < h
-    );
-}
-
-// =======================
-// NPC生成
-// =======================
-function spawnNPC() {
-    if (npcs.length < 3) {
-        npcs.push({
-            x: 120 + Math.random() * 200,
-            y: -100,
-            speed: 2,
-            collided: false
-        });
-    }
-}
-
-// =======================
-// メインループ（④含む）
-// =======================
-function gameLoop(time) {
-    if (gameState !== "playing") return;
-
-    const delta = (time - lastTime) / 16;
-    lastTime = time;
-
-    update(delta);
-    draw();
-
-    requestAnimationFrame(gameLoop);
-}
-
-// =======================
-// UPDATE
-// =======================
-function update(delta) {
-    // スピード
-    if (keys['ArrowUp']) speed += 0.2 * delta;
-    else speed -= 0.1 * delta;
-
-    speed = Math.max(0, Math.min(speed, 10));
-
-    // 移動
-    if (keys['ArrowLeft']) playerX -= 4 * delta;
-    if (keys['ArrowRight']) playerX += 4 * delta;
-
-    offset += speed;
-
-    spawnNPC();
-
-    // =======================
-    // NPC処理（③ filter）
-    // =======================
-    npcs.forEach(npc => {
-        npc.y += speed + npc.speed;
-
-        // 衝突
-        if (!npc.collided && isColliding(playerX, 520, npc.x, npc.y)) {
-            npc.collided = true;
-            score -= 5;
-        }
-    });
-
-    // 画面外削除
-    npcs = npcs.filter(npc => npc.y < canvas.height);
-
-    // =======================
-    // ④ スコア報酬
-    // =======================
-    if (speed > 0) {
-        score += 0.02 * delta; // 安全運転ボーナス
-    }
-
-    // ゲームオーバー
-    if (score <= 0) {
-        gameState = "gameOver";
-        showOverlay("GAME OVER", "Điểm đã hết!");
-    }
-}
-
-// =======================
-// DRAW
-// =======================
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // プレイヤー
-    ctx.font = "50px serif";
-    ctx.fillText("🏍️", playerX, 520);
-
-    // NPC
-    ctx.font = "40px serif";
-    npcs.forEach(npc => {
-        ctx.fillText("🚗", npc.x, npc.y);
-    });
-
-    // スコア
-    ctx.fillStyle = "white";
-    ctx.fillText("Score: " + Math.floor(score), 10, 50);
-}
-
-// =======================
-// START
-// =======================
+// =====================
+// 開始
+// =====================
 function startGame() {
-    gameState = "playing";
-    requestAnimationFrame(gameLoop);
+  document.getElementById("start").style.display = "none";
+  game.state = "play";
+  requestAnimationFrame(loop);
+}
+
+// =====================
+// ループ
+// =====================
+function loop(time) {
+  const delta = (time - lastTime) / 16;
+  lastTime = time;
+
+  update(delta);
+  draw();
+
+  if (game.state === "play") requestAnimationFrame(loop);
+}
+
+// =====================
+// 更新
+// =====================
+function update(d) {
+  // 加速
+  if (keys["ArrowUp"]) game.speed += 0.2 * d;
+  else game.speed -= 0.1 * d;
+
+  game.speed = Math.max(0, Math.min(10, game.speed));
+
+  // 移動
+  if (keys["ArrowLeft"]) game.playerX -= 4 * d;
+  if (keys["ArrowRight"]) game.playerX += 4 * d;
+
+  // NPC生成
+  if (game.npcs.length < 3) {
+    game.npcs.push({
+      x: Math.random()*350,
+      y: -50,
+      speed: 2,
+      hit: false
+    });
+  }
+
+  // NPC更新
+  game.npcs.forEach(n => {
+    n.y += game.speed + n.speed;
+
+    if (!n.hit && collide(game.playerX,520,n.x,n.y)) {
+      n.hit = true;
+      game.score -= 5;
+    }
+  });
+
+  // 削除（安全）
+  game.npcs = game.npcs.filter(n => n.y < 600);
+
+  // スコア加点
+  if (game.speed > 0) game.score += 0.05 * d;
+
+  // GAME OVER
+  if (game.score <= 0) endGame();
+}
+
+// =====================
+// 描画
+// =====================
+function draw() {
+  ctx.clearRect(0,0,400,600);
+
+  // プレイヤー
+  ctx.font = "40px serif";
+  ctx.fillText("🏍️", game.playerX, 520);
+
+  // NPC
+  game.npcs.forEach(n=>{
+    ctx.fillText("🚗", n.x, n.y);
+  });
+
+  // UI
+  ctx.fillStyle="white";
+  ctx.fillText("Score: "+Math.floor(game.score), 10, 30);
+}
+
+// =====================
+// 衝突判定
+// =====================
+function collide(ax, ay, bx, by) {
+  return Math.abs(ax-bx)<40 && Math.abs(ay-by)<50;
+}
+
+// =====================
+// 終了
+// =====================
+function endGame() {
+  game.state = "end";
+
+  const div = document.createElement("div");
+  div.className="overlay";
+  div.innerHTML = `
+    <h2>GAME OVER</h2>
+    <p>Score: ${Math.floor(game.score)}</p>
+    <button onclick="location.reload()">Retry</button>
+  `;
+  document.body.appendChild(div);
 }
 </script>
+
+</body>
+</html>
