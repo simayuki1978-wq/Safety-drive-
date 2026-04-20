@@ -1,254 +1,291 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Safety Driver Complete</title>
-
-<style>
-body { margin:0; background:#222; font-family:sans-serif; text-align:center; }
-canvas { background:#2ecc71; display:block; margin:0 auto; }
-
-.overlay {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.8); color:white;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  z-index:10;
-}
-
-#controls {
-  position: fixed;
-  bottom: 10px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-}
-
-#controls button {
-  width: 70px;
-  height: 70px;
-  font-size: 20px;
-  border-radius: 50%;
-  border: none;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Driver Pro - Perfect Drop Update</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
+        canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
+        #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: #555; color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
+        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
+        #ui-layer { position: absolute; top: 40px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
+        #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; }
+        .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; user-select: none; }
+        .btn-move { background: rgba(255,255,255,0.3); }
+        .btn-accel { background: #4caf50; }
+        .btn-brake { background: #d32f2f; }
+        .hidden { display: none !important; }
+        
+        /* アイテムとドロップエリアのスタイル */
+        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; user-select: none; }
+        .item:active { cursor: grabbing; }
+        
+        #drop-target { 
+            width: 260px; height: 200px; 
+            border: 4px dashed #fff; border-radius: 20px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            margin-bottom: 20px; background: rgba(0,0,0,0.3); transition: 0.3s; 
+        }
+        /* 子要素がドロップイベントを邪魔しないようにする魔法のコード */
+        #drop-target * { pointer-events: none; } 
+        
+        .course-btn { width: 100%; padding: 12px; margin: 5px 0; background: #3498db; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .course-btn:hover { background: #2980b9; }
+    </style>
 </head>
-
 <body>
 
-<canvas id="game" width="400" height="600"></canvas>
+<a href="index.html" id="back-home">◀ Quay lại Top</a>
 
-<div id="start" class="overlay">
-  <h2>🚦 Safety Driver</h2>
-  <button onclick="startGame()">START</button>
+<div id="prep-screen" class="overlay">
+    <h2>Chuẩn bị hành trang</h2>
+    
+    <div id="item-box" style="min-height: 70px;">
+        <span id="item-helmet" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('helmet')" data-type="helmet">⛑️</span>
+        <span id="item-shoes" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('shoes')" data-type="shoes">👟</span>
+        <span id="item-license" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('license')" data-type="license">🪪</span>
+    </div>
+    
+    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+        <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
+            <div id="equipped-helmet" style="font-size: 45px; opacity: 0; transform: translateY(10px); transition: 0.3s;">⛑️</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+                <div id="equipped-license" style="font-size: 35px; opacity: 0; transition: 0.3s;">🪪</div>
+                <div style="font-size: 65px; margin: 0 10px;">👤</div>
+                <div style="font-size: 35px; opacity: 0; visibility: hidden;">🪪</div> </div>
+            <div id="equipped-shoes" style="font-size: 45px; opacity: 0; transform: translateY(-10px); transition: 0.3s;">👟</div>
+        </div>
+    </div>
+    
+    <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Kéo đồ vào khung (Kéo hoặc Chạm) 👤</p>
+    
+    <div id="course-selection" class="hidden" style="width: 100%;">
+        <h3 style="color: #0f0;">Chọn đích đến (目的地を選んで出発)</h3>
+        <button class="course-btn" onclick="startGame(5, 'Trường học')">🏫 Trường học (5 ngã tư)</button>
+        <button class="course-btn" onclick="startGame(10, 'Siêu thị')">🛒 Siêu thị (10 ngã tư)</button>
+        <button class="course-btn" onclick="startGame(15, 'Trung tâm TM')">🏬 Trung tâm TM (15 ngã tư)</button>
+    </div>
 </div>
 
-<div id="controls">
-  <button ontouchstart="press('left')" ontouchend="release('left')">⬅</button>
-  <button ontouchstart="press('right')" ontouchend="release('right')">➡</button>
-  <button ontouchstart="press('brake')" ontouchend="release('brake')">🔴</button>
-  <button ontouchstart="press('gas')" ontouchend="release('gas')">🟢</button>
+<div id="ui-layer">
+    <div id="score-text" style="font-size: 20px; font-weight: bold;">Điểm: 100</div>
+    <div id="progress-text" style="color: #ffeb3b; font-size: 16px;">Ngã tư: 0 / 0</div>
+    <div id="speed-text" style="color: #0f0;">Tốc độ: 0 km/h</div>
+    <div id="signal-notice" style="font-size: 18px; font-weight: bold; margin-top: 10px;"></div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="controls" class="hidden">
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true">Trái</button>
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true">Phải</button>
+    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true">THẮNG</button>
+    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true">GA</button>
 </div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 400; canvas.height = 600;
 
-const game = {
-  state: "menu",
-  score: 100,
-  speed: 0,
-  playerX: 200,
-  npcs: [],
-  signalY: -300,
-  signalColor: "red",
-  timer: 0,
-  passed: 0,
-  goal: 5
-};
+    let gameState = "wait"; 
+    let score = 100, equipmentCount = 0, playerX = 280, offset = 0, speed = 0;
+    const keys = {};
 
-const input = { left:false, right:false, gas:false, brake:false };
+    let targetIntersections = 0, passedIntersections = 0, destinationName = "";
+    let signalY = -1000, signalColor = "red", signalTimer = 0;
+    const stopLineOffset = 120;
+    let npcs = [], walkers = [], bonusItems = [];
 
-function press(k){ input[k]=true; }
-function release(k){ input[k]=false; }
-
-window.addEventListener("touchend", ()=>{
-  input.left=false; input.right=false;
-  input.gas=false; input.brake=false;
-});
-
-let lastTime = 0;
-
-// ================= START =================
-function startGame(){
-  document.getElementById("start").style.display="none";
-  game.state="play";
-  requestAnimationFrame(loop);
-}
-
-// ================= LOOP =================
-function loop(time){
-  const d = (time - lastTime)/16;
-  lastTime = time;
-
-  update(d);
-  draw();
-
-  if(game.state==="play") requestAnimationFrame(loop);
-}
-
-// ================= UPDATE =================
-function update(d){
-
-  // 操作
-  if(input.gas) game.speed += 0.25*d;
-  else if(input.brake) game.speed -= 0.4*d;
-  else game.speed -= 0.05*d;
-
-  game.speed = Math.max(0, Math.min(10, game.speed));
-
-  if(input.left) game.playerX -= 4*d;
-  if(input.right) game.playerX += 4*d;
-
-  // NPC生成
-  if(game.npcs.length < 3){
-    game.npcs.push({
-      x: Math.random()*350,
-      y: -50,
-      speed: 2,
-      hit:false
-    });
-  }
-
-  // NPC更新
-  game.npcs.forEach(n=>{
-    n.y += game.speed + n.speed;
-
-    if(!n.hit && collide(game.playerX,520,n.x,n.y)){
-      n.hit = true;
-      game.score -= 5;
+    // --- 新しいドラッグ＆ドロップ機能 ---
+    function allowDrop(ev) { 
+        ev.preventDefault(); 
+        document.getElementById('drop-target').style.borderColor = "#4caf50";
+        document.getElementById('drop-target').style.background = "rgba(76, 175, 80, 0.2)";
     }
-  });
+    
+    function dragLeave(ev) {
+        document.getElementById('drop-target').style.borderColor = "#fff";
+        document.getElementById('drop-target').style.background = "rgba(0,0,0,0.3)";
+    }
 
-  game.npcs = game.npcs.filter(n=>n.y < 600);
+    function drag(ev) { 
+        ev.dataTransfer.setData("text", ev.target.dataset.type); 
+    }
 
-  // ===== 信号 =====
-  game.signalY += game.speed;
-  game.timer++;
+    function drop(ev) {
+        ev.preventDefault();
+        dragLeave(); // 見た目をリセット
+        const type = ev.dataTransfer.getData("text");
+        equip(type);
+    }
 
-  if(game.timer > 180){
-    game.signalColor = game.signalColor==="red" ? "green":"red";
-    game.timer = 0;
-  }
+    // ドロップだけでなく、タップでも装備できるように共通化
+    function equip(type) {
+        const sourceItem = document.getElementById('item-' + type);
+        const equippedItem = document.getElementById('equipped-' + type);
+        
+        if (sourceItem && !sourceItem.classList.contains('hidden')) {
+            sourceItem.classList.add('hidden');
+            equippedItem.style.opacity = "1"; // 正確な位置にアイテムを表示
+            equipmentCount++;
+            
+            if (equipmentCount >= 3) {
+                document.getElementById('status-msg').classList.add('hidden');
+                document.getElementById('course-selection').classList.remove('hidden');
+                document.getElementById('drop-target').style.borderColor = "#4caf50";
+            }
+        }
+    }
 
-  let stopLine = game.signalY + 100;
+    function startGame(intersections, name) {
+        targetIntersections = intersections;
+        destinationName = name;
+        passedIntersections = 0;
+        document.getElementById('prep-screen').classList.add('hidden');
+        document.getElementById('controls').classList.remove('hidden');
+        gameState = "playing";
+        draw();
+    }
 
-  // 赤信号違反
-  if(
-    game.signalColor==="red" &&
-    stopLine > 450 && stopLine < 550 &&
-    game.speed > 1
-  ){
-    endGame("🚫 Vượt đèn đỏ!");
-  }
+    function spawnNPC() {
+        if(npcs.length < 3) {
+            npcs.push({ x: 120 + Math.random() * 200, y: -100 - Math.random() * 500, type: ["🚗", "🚲", "🚌", "🛵", "🏍️"][Math.floor(Math.random() * 5)], speedBase: 1 + Math.random() * 2, collided: false });
+        }
+    }
+    function spawnWalker() {
+        if(walkers.length < 1) walkers.push({ x: -50, y: 100 + Math.random() * 300, collided: false });
+    }
+    function spawnItem() {
+        if(bonusItems.length < 1 && Math.random() < 0.01) bonusItems.push({ x: 150 + Math.random() * 150, y: -200, type: Math.random() > 0.5 ? "📱" : "🎧", collided: false });
+    }
 
-  // 通過
-  if(game.signalY > 600){
-    game.signalY = -300;
-    game.signalColor="red";
-    game.passed++;
-  }
+    function draw() {
+        if (gameState !== "playing") return;
+        ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "#34495e"; ctx.beginPath();
+        ctx.moveTo(120, 0); ctx.lineTo(280, 0); ctx.lineTo(400, 600); ctx.lineTo(0, 600); ctx.fill();
+        
+        ctx.strokeStyle = "#fff"; ctx.setLineDash([30, 40]); ctx.lineDashOffset = -offset;
+        ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(200, 600); ctx.stroke();
 
-  // スコア
-  if(game.speed > 0) game.score += 0.05*d;
+        ctx.setLineDash([]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.moveTo(0, signalY + stopLineOffset); ctx.lineTo(canvas.width, signalY + stopLineOffset); ctx.stroke();
 
-  // ゴール
-  if(game.passed >= game.goal){
-    clearGame();
-  }
+        drawTraffic();
+        drawSignal();
 
-  if(game.score <= 0){
-    endGame("Hết điểm!");
-  }
-}
+        ctx.textAlign = "center";
+        ctx.font = "50px serif"; ctx.fillText("🏍️", playerX, 520);
+        ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, 490);
 
-// ================= DRAW =================
-function draw(){
-  ctx.clearRect(0,0,400,600);
+        update();
+        requestAnimationFrame(draw);
+    }
 
-  // プレイヤー
-  ctx.font="40px serif";
-  ctx.fillText("🏍️", game.playerX, 520);
+    function drawTraffic() {
+        ctx.shadowColor = "rgba(255,255,255,0.9)"; ctx.shadowBlur = 15;
+        npcs.forEach(npc => { ctx.font = "40px serif"; ctx.fillText(npc.type, npc.x, npc.y); });
+        walkers.forEach(w => { ctx.font = "50px serif"; ctx.fillText("🚶", w.x, w.y); });
+        bonusItems.forEach(i => { ctx.font = "40px serif"; ctx.fillText(i.type, i.x, i.y); });
+        ctx.shadowBlur = 0;
+    }
 
-  // NPC
-  game.npcs.forEach(n=>{
-    ctx.fillText("🚗", n.x, n.y);
-  });
+    function drawSignal() {
+        ctx.fillStyle = "#333"; ctx.fillRect(350, signalY, 20, 60);
+        ctx.beginPath(); ctx.arc(360, signalY+15, 8, 0, Math.PI*2);
+        ctx.fillStyle = (signalColor === "red") ? "red" : "#222"; ctx.fill();
+        ctx.beginPath(); ctx.arc(360, signalY+45, 8, 0, Math.PI*2);
+        ctx.fillStyle = (signalColor === "green") ? "#0f0" : "#222"; ctx.fill();
+    }
 
-  // 信号
-  ctx.fillStyle="black";
-  ctx.fillRect(350, game.signalY, 20, 60);
+    function update() {
+        if (keys['ArrowUp']) speed += 0.15;
+        else if (keys['Space']) speed -= 0.5;
+        else speed -= 0.05;
+        speed = Math.max(0, Math.min(speed, 10));
 
-  ctx.fillStyle = game.signalColor==="red" ? "red":"#333";
-  ctx.beginPath();
-  ctx.arc(360, game.signalY+15, 8, 0, Math.PI*2);
-  ctx.fill();
+        if (keys['ArrowLeft'] && playerX > 50) playerX -= 4;
+        if (keys['ArrowRight'] && playerX < 350) playerX += 4;
+        
+        offset += speed;
+        signalY += speed;
 
-  ctx.fillStyle = game.signalColor==="green" ? "lime":"#333";
-  ctx.beginPath();
-  ctx.arc(360, game.signalY+45, 8, 0, Math.PI*2);
-  ctx.fill();
+        spawnNPC(); spawnWalker(); spawnItem();
 
-  let stopLine = game.signalY + 100;
+        if (signalColor === "red" && signalY + stopLineOffset > 400) {
+            signalTimer++;
+            document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! DỪNG LẠI (" + Math.ceil((300-signalTimer)/60) + "s)";
+            document.getElementById('signal-notice').style.color = "red";
+            if (signalTimer > 300) { signalColor = "green"; signalTimer = 0; }
+        } else if (signalColor === "green") {
+            document.getElementById('signal-notice').innerText = "ĐÈN XANH - ĐI TIẾP!";
+            document.getElementById('signal-notice').style.color = "#0f0";
+        }
 
-  ctx.strokeStyle="white";
-  ctx.beginPath();
-  ctx.moveTo(0, stopLine);
-  ctx.lineTo(400, stopLine);
-  ctx.stroke();
+        if (signalY > canvas.height) { 
+            signalY = -1000 - Math.random() * 500; 
+            signalColor = "red"; 
+            signalTimer = 0; 
+            passedIntersections++;
+            if (passedIntersections >= targetIntersections) { gameClear(); return; }
+        }
 
-  // UI
-  ctx.fillStyle="white";
-  ctx.fillText("Score: "+Math.floor(game.score), 10, 30);
-  ctx.fillText("Goal: "+game.passed+"/"+game.goal, 10, 60);
-}
+        npcs.forEach((npc, index) => {
+            npc.y += speed * 0.5 + npc.speedBase;
+            if (!npc.collided && Math.abs(playerX - npc.x) < 40 && Math.abs(520 - npc.y) < 50) {
+                npc.collided = true; score -= 5;
+                document.getElementById('signal-notice').innerText = "💥 Va chạm xe! (-5 điểm)";
+                document.getElementById('signal-notice').style.color = "orange";
+            }
+            if (npc.y > canvas.height) npcs.splice(index, 1);
+        });
 
-// ================= COLLISION =================
-function collide(ax, ay, bx, by){
-  return Math.abs(ax-bx)<40 && Math.abs(ay-by)<50;
-}
+        walkers.forEach((w, index) => {
+            w.x += 1.5; w.y += speed;
+            if (!w.collided && Math.abs(playerX - w.x) < 45 && Math.abs(520 - w.y) < 55) {
+                w.collided = true; score -= 10;
+                document.getElementById('signal-notice').innerText = "💥 Đâm người đi bộ! (-10 điểm)";
+                document.getElementById('signal-notice').style.color = "red";
+            }
+            if (w.x > canvas.width + 50 || w.y > canvas.height) walkers.splice(index, 1);
+        });
 
-// ================= GAME OVER =================
-function endGame(msg){
-  game.state="end";
+        bonusItems.forEach((i, index) => {
+            i.y += speed;
+            if (!i.collided && Math.abs(playerX - i.x) < 40 && Math.abs(520 - i.y) < 40) {
+                i.collided = true; score -= 10;
+                alert("Nguy hiểm! Không dùng điện thoại/tai nghe khi lái xe!");
+            }
+            if (i.y > canvas.height) bonusItems.splice(index, 1);
+        });
 
-  const div=document.createElement("div");
-  div.className="overlay";
-  div.innerHTML=`
-    <h2>GAME OVER</h2>
-    <p>${msg}</p>
-    <p>Score: ${Math.floor(game.score)}</p>
-    <button onclick="location.reload()">Retry</button>
-  `;
-  document.body.appendChild(div);
-}
+        if (signalColor === "red" && (signalY + stopLineOffset) > 460 && (signalY + stopLineOffset) < 550 && speed > 0.5) {
+            gameOver("Bạn đã vượt vạch dừng khi đèn đỏ!");
+        }
 
-// ================= CLEAR =================
-function clearGame(){
-  game.state="clear";
+        document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
+        document.getElementById('progress-text').innerText = `Ngã tư (交差点): ${passedIntersections} / ${targetIntersections}`;
+        document.getElementById('speed-text').innerText = `Tốc độ: ${Math.floor(speed * 6)} km/h`;
+        
+        if (score <= 0) gameOver("Điểm an toàn đã hết! (Game Over)");
+    }
 
-  const div=document.createElement("div");
-  div.className="overlay";
-  div.innerHTML=`
-    <h2>🎉 CLEAR</h2>
-    <p>Hoàn thành!</p>
-    <p>Score: ${Math.floor(game.score)}</p>
-    <button onclick="location.reload()">Play again</button>
-  `;
-  document.body.appendChild(div);
-}
+    function gameOver(msg) {
+        gameState = "gameOver";
+        alert("GAME OVER\n" + msg);
+        location.reload();
+    }
+
+    function gameClear() {
+        gameState = "clear";
+        alert(`🎉 CHÚC MỪNG! (CLEAR!)\nBạn đã đến [${destinationName}] an toàn!\nĐiểm của bạn: ${Math.floor(score)}`);
+        location.reload();
+    }
+
+    window.addEventListener('touchend', () => { keys['ArrowLeft']=false; keys['ArrowRight']=false; keys['Space']=false; keys['ArrowUp']=false; });
 </script>
-
 </body>
 </html>
