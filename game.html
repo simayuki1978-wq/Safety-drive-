@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Driver Pro - Final Edition</title>
+    <title>Safety Driver Pro - Destination Update</title>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
         canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
         #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: #555; color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
-        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
         #ui-layer { position: absolute; top: 40px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
         #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; }
         .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; user-select: none; }
@@ -17,7 +17,11 @@
         .btn-brake { background: #d32f2f; }
         .hidden { display: none !important; }
         .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; }
-        #drop-target { width: 160px; height: 160px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+        #drop-target { width: 120px; height: 120px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 60px; margin-bottom: 20px; }
+        
+        /* 目的地選択ボタン */
+        .course-btn { width: 100%; padding: 12px; margin: 5px 0; background: #3498db; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .course-btn:hover { background: #2980b9; }
     </style>
 </head>
 <body>
@@ -33,13 +37,20 @@
     </div>
     <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)">👤</div>
     <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Kéo đồ vào người 👤</p>
-    <button id="start-btn" class="hidden" style="padding:15px 30px; background:#4caf50; color:white; border:none; border-radius:20px;" onclick="startGame()">BẮT ĐẦU</button>
+    
+    <div id="course-selection" class="hidden" style="width: 100%;">
+        <h3 style="color: #0f0;">Chọn đích đến (目的地を選んで出発)</h3>
+        <button class="course-btn" onclick="startGame(5, 'Trường học')">🏫 Trường học (5 ngã tư)</button>
+        <button class="course-btn" onclick="startGame(10, 'Siêu thị')">🛒 Siêu thị (10 ngã tư)</button>
+        <button class="course-btn" onclick="startGame(15, 'Trung tâm TM')">🏬 Trung tâm TM (15 ngã tư)</button>
+    </div>
 </div>
 
 <div id="ui-layer">
     <div id="score-text" style="font-size: 20px; font-weight: bold;">Điểm: 100</div>
+    <div id="progress-text" style="color: #ffeb3b; font-size: 16px;">Ngã tư: 0 / 0</div>
     <div id="speed-text" style="color: #0f0;">Tốc độ: 0 km/h</div>
-    <div id="signal-notice" style="font-size: 18px; font-weight: bold;"></div>
+    <div id="signal-notice" style="font-size: 18px; font-weight: bold; margin-top: 10px;"></div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -60,14 +71,19 @@
     let score = 100, equipmentCount = 0, playerX = 280, offset = 0, speed = 0;
     const keys = {};
 
+    // 目的地設定
+    let targetIntersections = 0;
+    let passedIntersections = 0;
+    let destinationName = "";
+
     // 信号・停止線
     let signalY = -1000, signalColor = "red", signalTimer = 0;
-    const stopLineOffset = 120; // 信号機からの距離
+    const stopLineOffset = 120;
 
-    // NPC・アイテム
-    let npc = { x: 200, y: -200, type: "🚗" };
-    let walker = { x: -50, y: 300 };
-    let bonusItem = { x: 100, y: -500, type: "📱" }; // 誘惑アイテム
+    // NPC（配列にして複数登場させる）
+    let npcs = [];
+    let walkers = [];
+    let bonusItems = [];
 
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
     function allowDrop(ev) { ev.preventDefault(); }
@@ -77,21 +93,53 @@
         document.getElementById(data).classList.add('hidden');
         equipmentCount++;
         if (equipmentCount >= 3) {
-            document.getElementById('start-btn').classList.remove('hidden');
+            document.getElementById('status-msg').classList.add('hidden');
+            document.getElementById('course-selection').classList.remove('hidden');
             document.getElementById('drop-target').innerText = "✅";
         }
     }
 
-    function startGame() {
+    function startGame(intersections, name) {
+        targetIntersections = intersections;
+        destinationName = name;
+        passedIntersections = 0;
+        
         document.getElementById('prep-screen').classList.add('hidden');
         document.getElementById('controls').classList.remove('hidden');
         gameState = "playing";
         draw();
     }
 
+    // NPCの生成関数
+    function spawnNPC() {
+        if(npcs.length < 3) { // 常に3台ほどの車/バイクを配置
+            npcs.push({
+                x: 120 + Math.random() * 200,
+                y: -100 - Math.random() * 500,
+                type: ["🚗", "🚲", "🚌", "🛵", "🏍️"][Math.floor(Math.random() * 5)], // バイクを追加
+                speedBase: 1 + Math.random() * 2,
+                collided: false
+            });
+        }
+    }
+    
+    function spawnWalker() {
+        if(walkers.length < 1) {
+            walkers.push({ x: -50, y: 100 + Math.random() * 300, collided: false });
+        }
+    }
+
+    function spawnItem() {
+        if(bonusItems.length < 1 && Math.random() < 0.01) {
+            bonusItems.push({ x: 150 + Math.random() * 150, y: -200, type: Math.random() > 0.5 ? "📱" : "🎧", collided: false });
+        }
+    }
+
     function draw() {
         if (gameState !== "playing") return;
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 道路
         ctx.fillStyle = "#34495e"; ctx.beginPath();
         ctx.moveTo(120, 0); ctx.lineTo(280, 0); ctx.lineTo(400, 600); ctx.lineTo(0, 600); ctx.fill();
         
@@ -105,6 +153,8 @@
         drawTraffic();
         drawSignal();
 
+        // プレイヤー
+        ctx.textAlign = "center";
         ctx.font = "50px serif"; ctx.fillText("🏍️", playerX, 520);
         ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, 490);
 
@@ -113,9 +163,18 @@
     }
 
     function drawTraffic() {
-        ctx.font = "40px serif"; ctx.fillText(npc.type, npc.x, npc.y);
-        ctx.font = "30px serif"; ctx.fillText("🚶", walker.x, walker.y);
-        ctx.font = "30px serif"; ctx.fillText(bonusItem.type, bonusItem.x, bonusItem.y);
+        // 背景の暗さに負けないよう、白く発光させる（自転車などを見やすくする）
+        ctx.shadowColor = "rgba(255,255,255,0.9)";
+        ctx.shadowBlur = 15;
+        
+        npcs.forEach(npc => { ctx.font = "40px serif"; ctx.fillText(npc.type, npc.x, npc.y); });
+        
+        // 歩行者を大きく（50px）
+        walkers.forEach(w => { ctx.font = "50px serif"; ctx.fillText("🚶", w.x, w.y); });
+        
+        bonusItems.forEach(i => { ctx.font = "40px serif"; ctx.fillText(i.type, i.x, i.y); });
+        
+        ctx.shadowBlur = 0; // 発光リセット
     }
 
     function drawSignal() {
@@ -137,49 +196,91 @@
         
         offset += speed;
         signalY += speed;
-        npc.y += speed * 0.5 + 2;
-        walker.x += 1.5;
-        bonusItem.y += speed;
 
-        // 信号管理: 停止線がバイクの鼻先(450px付近)に来たらカウントダウン開始
+        spawnNPC();
+        spawnWalker();
+        spawnItem();
+
+        // 信号管理
         if (signalColor === "red" && signalY + stopLineOffset > 400) {
             signalTimer++;
             document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! DỪNG LẠI (" + Math.ceil((300-signalTimer)/60) + "s)";
+            document.getElementById('signal-notice').style.color = "red";
             if (signalTimer > 300) { signalColor = "green"; signalTimer = 0; }
         } else if (signalColor === "green") {
             document.getElementById('signal-notice').innerText = "ĐÈN XANH - ĐI TIẾP!";
+            document.getElementById('signal-notice').style.color = "#0f0";
         }
 
-        // 信号ループ
-        if (signalY > canvas.height) { signalY = -1200; signalColor = "red"; signalTimer = 0; }
-        // NPCループ
-        if (npc.y > canvas.height) { npc.y = -200; npc.x = 150 + Math.random()*150; npc.type = ["🚗","🚲","🚌"][Math.floor(Math.random()*3)]; }
-        if (walker.x > canvas.width + 50) { walker.x = -100; walker.y = 200 + Math.random()*200; }
-        if (bonusItem.y > canvas.height) { bonusItem.y = -1000; bonusItem.x = 100 + Math.random()*200; bonusItem.type = Math.random()>0.5 ? "📱" : "🎧"; }
+        // 信号を通過した（交差点クリア）
+        if (signalY > canvas.height) { 
+            signalY = -1000 - Math.random() * 500; 
+            signalColor = "red"; 
+            signalTimer = 0; 
+            passedIntersections++;
+            
+            // ゴール判定
+            if (passedIntersections >= targetIntersections) {
+                gameClear();
+                return;
+            }
+        }
 
-        // 判定
-        // 1. 赤信号の停止線越え
+        // NPC移動と当たり判定（当たり判定を拡大、一度当たったらフラグを立てて連続減点を防ぐ）
+        npcs.forEach((npc, index) => {
+            npc.y += speed * 0.5 + npc.speedBase;
+            if (!npc.collided && Math.abs(playerX - npc.x) < 40 && Math.abs(520 - npc.y) < 50) {
+                npc.collided = true;
+                score -= 5;
+                document.getElementById('signal-notice').innerText = "💥 Va chạm xe! (-5 điểm)";
+                document.getElementById('signal-notice').style.color = "orange";
+            }
+            if (npc.y > canvas.height) npcs.splice(index, 1);
+        });
+
+        walkers.forEach((w, index) => {
+            w.x += 1.5;
+            w.y += speed; // スクロールに合わせて歩行者も手前に来るように
+            if (!w.collided && Math.abs(playerX - w.x) < 45 && Math.abs(520 - w.y) < 55) {
+                w.collided = true;
+                score -= 10;
+                document.getElementById('signal-notice').innerText = "💥 Đâm người đi bộ! (-10 điểm)";
+                document.getElementById('signal-notice').style.color = "red";
+            }
+            if (w.x > canvas.width + 50 || w.y > canvas.height) walkers.splice(index, 1);
+        });
+
+        bonusItems.forEach((i, index) => {
+            i.y += speed;
+            if (!i.collided && Math.abs(playerX - i.x) < 40 && Math.abs(520 - i.y) < 40) {
+                i.collided = true;
+                score -= 10;
+                alert("Nguy hiểm! Không dùng điện thoại/tai nghe khi lái xe!");
+            }
+            if (i.y > canvas.height) bonusItems.splice(index, 1);
+        });
+
+        // 停止線越えのゲームオーバー判定
         if (signalColor === "red" && (signalY + stopLineOffset) > 460 && (signalY + stopLineOffset) < 550 && speed > 0.5) {
             gameOver("Bạn đã vượt vạch dừng khi đèn đỏ!");
         }
-        // 2. 衝突判定
-        if (Math.abs(playerX - npc.x) < 30 && Math.abs(520 - npc.y) < 40) { score -= 1; }
-        if (Math.abs(playerX - walker.x) < 30 && Math.abs(520 - walker.y) < 40) { gameOver("Bạn đã gây tai nạn cho người đi bộ!"); }
-        // 3. 誘惑アイテム接触（スマホ・イヤホン）
-        if (Math.abs(playerX - bonusItem.x) < 30 && Math.abs(520 - bonusItem.y) < 40) {
-            score -= 10;
-            bonusItem.y = -1000;
-            alert("Nguy hiểm! Không sử dụng điện thoại/tai nghe khi lái xe!");
-        }
 
         document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
+        document.getElementById('progress-text').innerText = `Ngã tư (交差点): ${passedIntersections} / ${targetIntersections}`;
         document.getElementById('speed-text').innerText = `Tốc độ: ${Math.floor(speed * 6)} km/h`;
-        if (score <= 0) gameOver("Điểm an toàn đã hết!");
+        
+        if (score <= 0) gameOver("Điểm an toàn đã hết! (Game Over)");
     }
 
     function gameOver(msg) {
         gameState = "gameOver";
         alert("GAME OVER\n" + msg);
+        location.reload();
+    }
+
+    function gameClear() {
+        gameState = "clear";
+        alert(`🎉 CHÚC MỪNG! (CLEAR!)\nBạn đã đến [${destinationName}] an toàn!\nĐiểm của bạn: ${Math.floor(score)}`);
         location.reload();
     }
 
