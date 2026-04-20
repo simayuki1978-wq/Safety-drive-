@@ -3,26 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Driver Pro - Vạch Dừng An Toàn</title>
+    <title>Safety Driver Pro - Final Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
         canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
-        
         #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: #555; color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
-        
         .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         #ui-layer { position: absolute; top: 40px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
-        
         #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; }
         .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; user-select: none; }
         .btn-move { background: rgba(255,255,255,0.3); }
         .btn-accel { background: #4caf50; }
         .btn-brake { background: #d32f2f; }
-        
         .hidden { display: none !important; }
         .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; }
-        #drop-target { width: 160px; height: 160px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; transition: 0.3s; }
-        #drop-target.hover { background: rgba(255,255,255,0.2); border-color: #4caf50; }
+        #drop-target { width: 160px; height: 160px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; }
     </style>
 </head>
 <body>
@@ -31,17 +26,14 @@
 
 <div id="prep-screen" class="overlay">
     <h2>Chuẩn bị hành trang</h2>
-    <p>Kéo vật dụng vào nhân vật 👤</p>
     <div id="item-box">
         <span id="helmet" class="item" draggable="true" ondragstart="drag(event)">⛑️</span>
         <span id="shoes" class="item" draggable="true" ondragstart="drag(event)">👟</span>
         <span id="license" class="item" draggable="true" ondragstart="drag(event)">🪪</span>
     </div>
-    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="this.classList.add('hover')" ondragleave="this.classList.remove('hover')">
-        👤
-    </div>
-    <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Chưa sẵn sàng</p>
-    <button id="start-btn" class="hidden" style="padding:15px 30px; background:#4caf50; color:white; border-radius:20px; border:none; cursor:pointer;" onclick="startGame()">BẮT ĐẦU</button>
+    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)">👤</div>
+    <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Kéo đồ vào người 👤</p>
+    <button id="start-btn" class="hidden" style="padding:15px 30px; background:#4caf50; color:white; border:none; border-radius:20px;" onclick="startGame()">BẮT ĐẦU</button>
 </div>
 
 <div id="ui-layer">
@@ -65,33 +57,28 @@
     canvas.width = 400; canvas.height = 600;
 
     let gameState = "wait"; 
-    let score = 100;
-    let equipmentCount = 0;
-    let playerX = 280;
-    let offset = 0;
-    let speed = 0;
+    let score = 100, equipmentCount = 0, playerX = 280, offset = 0, speed = 0;
     const keys = {};
 
-    // 信号と停止線の設定
-    let signalY = -500;
-    let signalColor = "red";
-    let signalTimer = 0;
-    const stopLineOffset = 80; // 信号機から停止線までの距離
+    // 信号・停止線
+    let signalY = -1000, signalColor = "red", signalTimer = 0;
+    const stopLineOffset = 120; // 信号機からの距離
 
-    // ドラッグ＆ドロップ関数
+    // NPC・アイテム
+    let npc = { x: 200, y: -200, type: "🚗" };
+    let walker = { x: -50, y: 300 };
+    let bonusItem = { x: 100, y: -500, type: "📱" }; // 誘惑アイテム
+
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
     function allowDrop(ev) { ev.preventDefault(); }
     function drop(ev) {
         ev.preventDefault();
-        const target = document.getElementById('drop-target');
-        target.classList.remove('hover');
         const data = ev.dataTransfer.getData("text");
         document.getElementById(data).classList.add('hidden');
         equipmentCount++;
-        document.getElementById('status-msg').innerText = `Đã chuẩn bị: ${equipmentCount}/3`;
         if (equipmentCount >= 3) {
             document.getElementById('start-btn').classList.remove('hidden');
-            target.innerText = "✅";
+            document.getElementById('drop-target').innerText = "✅";
         }
     }
 
@@ -104,29 +91,20 @@
 
     function draw() {
         if (gameState !== "playing") return;
-        
-        // 背景と道
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#34495e"; ctx.beginPath();
         ctx.moveTo(120, 0); ctx.lineTo(280, 0); ctx.lineTo(400, 600); ctx.lineTo(0, 600); ctx.fill();
         
-        // センターライン
         ctx.strokeStyle = "#fff"; ctx.setLineDash([30, 40]); ctx.lineDashOffset = -offset;
         ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(200, 600); ctx.stroke();
 
-        // 停止線の描画 (信号機の手前)
-        ctx.setLineDash([]); // 停止線は実線
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.moveTo(0, signalY + stopLineOffset);
-        ctx.lineTo(canvas.width, signalY + stopLineOffset);
-        ctx.stroke();
+        // 停止線
+        ctx.setLineDash([]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.moveTo(0, signalY + stopLineOffset); ctx.lineTo(canvas.width, signalY + stopLineOffset); ctx.stroke();
 
-        // 信号機
+        drawTraffic();
         drawSignal();
 
-        // プレイヤー
         ctx.font = "50px serif"; ctx.fillText("🏍️", playerX, 520);
         ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, 490);
 
@@ -134,65 +112,69 @@
         requestAnimationFrame(draw);
     }
 
+    function drawTraffic() {
+        ctx.font = "40px serif"; ctx.fillText(npc.type, npc.x, npc.y);
+        ctx.font = "30px serif"; ctx.fillText("🚶", walker.x, walker.y);
+        ctx.font = "30px serif"; ctx.fillText(bonusItem.type, bonusItem.x, bonusItem.y);
+    }
+
     function drawSignal() {
         ctx.fillStyle = "#333"; ctx.fillRect(350, signalY, 20, 60);
-        // 赤信号
         ctx.beginPath(); ctx.arc(360, signalY+15, 8, 0, Math.PI*2);
         ctx.fillStyle = (signalColor === "red") ? "red" : "#222"; ctx.fill();
-        // 青信号
         ctx.beginPath(); ctx.arc(360, signalY+45, 8, 0, Math.PI*2);
         ctx.fillStyle = (signalColor === "green") ? "#0f0" : "#222"; ctx.fill();
     }
 
     function update() {
-        // 加減速
         if (keys['ArrowUp']) speed += 0.15;
         else if (keys['Space']) speed -= 0.5;
         else speed -= 0.05;
         speed = Math.max(0, Math.min(speed, 10));
 
-        // 左右
         if (keys['ArrowLeft'] && playerX > 50) playerX -= 4;
         if (keys['ArrowRight'] && playerX < 350) playerX += 4;
         
         offset += speed;
-        signalY += speed; // 信号が手前に来る速度
+        signalY += speed;
+        npc.y += speed * 0.5 + 2;
+        walker.x += 1.5;
+        bonusItem.y += speed;
 
-        // 信号管理（赤信号は5秒間 = 約300フレーム）
-        if (signalColor === "red") {
+        // 信号管理: 停止線がバイクの鼻先(450px付近)に来たらカウントダウン開始
+        if (signalColor === "red" && signalY + stopLineOffset > 400) {
             signalTimer++;
-            document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! HÃY DỪNG LẠI";
-            document.getElementById('signal-notice').style.color = "red";
-            if (signalTimer > 300) {
-                signalColor = "green";
-                signalTimer = 0;
-            }
-        } else {
-            document.getElementById('signal-notice').innerText = "ĐÈN XANH - HÃY ĐI TIẾP";
-            document.getElementById('signal-notice').style.color = "#0f0";
+            document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! DỪNG LẠI (" + Math.ceil((300-signalTimer)/60) + "s)";
+            if (signalTimer > 300) { signalColor = "green"; signalTimer = 0; }
+        } else if (signalColor === "green") {
+            document.getElementById('signal-notice').innerText = "ĐÈN XANH - ĐI TIẾP!";
         }
 
-        // 信号と停止線のループ
-        if (signalY > canvas.height) {
-            signalY = -800;
-            signalColor = "red"; // 次の信号は必ず赤から開始
-            signalTimer = 0;
-        }
+        // 信号ループ
+        if (signalY > canvas.height) { signalY = -1200; signalColor = "red"; signalTimer = 0; }
+        // NPCループ
+        if (npc.y > canvas.height) { npc.y = -200; npc.x = 150 + Math.random()*150; npc.type = ["🚗","🚲","🚌"][Math.floor(Math.random()*3)]; }
+        if (walker.x > canvas.width + 50) { walker.x = -100; walker.y = 200 + Math.random()*200; }
+        if (bonusItem.y > canvas.height) { bonusItem.y = -1000; bonusItem.x = 100 + Math.random()*200; bonusItem.type = Math.random()>0.5 ? "📱" : "🎧"; }
 
-        // --- ルール判定：停止線を超えたか ---
-        // プレイヤーの位置(520px)が停止線(signalY + stopLineOffset)を超えた瞬間
-        if (signalColor === "red" && (signalY + stopLineOffset) > 420 && (signalY + stopLineOffset) < 520) {
-            if (speed > 0.1) { // 止まらずに超えようとした場合
-                gameOver("Bạn đã vượt vạch dừng khi đèn đỏ!");
-            }
+        // 判定
+        // 1. 赤信号の停止線越え
+        if (signalColor === "red" && (signalY + stopLineOffset) > 460 && (signalY + stopLineOffset) < 550 && speed > 0.5) {
+            gameOver("Bạn đã vượt vạch dừng khi đèn đỏ!");
         }
-        // 完全に停止線を追い越した場合
-        if (signalColor === "red" && (signalY + stopLineOffset) > 520) {
-             gameOver("Bạn đã vượt đèn đỏ!");
+        // 2. 衝突判定
+        if (Math.abs(playerX - npc.x) < 30 && Math.abs(520 - npc.y) < 40) { score -= 1; }
+        if (Math.abs(playerX - walker.x) < 30 && Math.abs(520 - walker.y) < 40) { gameOver("Bạn đã gây tai nạn cho người đi bộ!"); }
+        // 3. 誘惑アイテム接触（スマホ・イヤホン）
+        if (Math.abs(playerX - bonusItem.x) < 30 && Math.abs(520 - bonusItem.y) < 40) {
+            score -= 10;
+            bonusItem.y = -1000;
+            alert("Nguy hiểm! Không sử dụng điện thoại/tai nghe khi lái xe!");
         }
 
         document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
         document.getElementById('speed-text').innerText = `Tốc độ: ${Math.floor(speed * 6)} km/h`;
+        if (score <= 0) gameOver("Điểm an toàn đã hết!");
     }
 
     function gameOver(msg) {
@@ -201,13 +183,7 @@
         location.reload();
     }
 
-    // スマホ用タッチエンド処理
-    window.addEventListener('touchend', () => {
-        keys['ArrowLeft'] = false;
-        keys['ArrowRight'] = false;
-        keys['Space'] = false;
-        keys['ArrowUp'] = false;
-    });
+    window.addEventListener('touchend', () => { keys['ArrowLeft']=false; keys['ArrowRight']=false; keys['Space']=false; keys['ArrowUp']=false; });
 </script>
 </body>
 </html>
