@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Driver Pro - Game Giáo Dục An Toàn Giao Thông</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Helvetica Neue', Arial, sans-serif; text-align: center; }
+        canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; max-width: 100vw; max-height: 100vh; }
+        
+        /* UI共通スタイル */
+        .overlay { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        #ui-layer { position: absolute; top: 10px; width: 100%; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; }
+        
+        button { padding: 12px 30px; font-size: 18px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        button:hover { transform: scale(1.1); }
+        .btn-start { background: #4caf50; color: white; }
+        .btn-close { background: #d32f2f; color: white; }
+
+        /* キャラクター選択 */
+        .char-select { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin: 10px; }
+        .char-btn { font-size: 24px; background: white; border: 2px solid #ddd; border-radius: 10px; margin: 5px; cursor: pointer; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-screen" class="overlay" style="z-index: 30;">
+    <h2 style="color: #ffeb3b;">Luật chơi An toàn (Quy tắc)</h2>
+    <ul style="text-align: left; font-size: 16px; line-height: 1.8; max-width: 300px;">
+        <li>✅ <b>Chuẩn bị:</b> Trang bị mũ, giày và bằng lái.</li>
+        <li>🚦 <b>Tín hiệu:</b> Tuyệt đối không vượt đèn đỏ.</li>
+        <li>🛣️ <b>Đi đúng làn:</b> Đi bên phải đường.</li>
+        <li>🎧 <b>Tập trung:</b> Không đeo tai nghe.</li>
+        <li>⚖️ <b>Tải trọng:</b> Không chở quá người/đồ.</li>
+    </ul>
+    <p>Hãy giữ điểm để trở thành <b>Pro Driver</b>!</p>
+    <button class="btn-close" onclick="closeTutorial()">Tôi đã hiểu</button>
+</div>
+
+<div id="prep-screen" class="overlay" style="z-index: 20;">
+    <h2>Chuẩn bị hành trang</h2>
+    <p>Kéo vật dụng vào nhân vật 👤</p>
+    
+    <div style="margin: 20px;">
+        <span id="helmet" draggable="true" ondragstart="drag(event)" style="font-size: 50px; cursor: grab; margin: 10px;">⛑️</span>
+        <span id="shoes" draggable="true" ondragstart="drag(event)" style="font-size: 50px; cursor: grab; margin: 10px;">👟</span>
+        <span id="license" draggable="true" ondragstart="drag(event)" style="font-size: 50px; cursor: grab; margin: 10px;">🪪</span>
+    </div>
+
+    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" 
+         style="width: 120px; height: 120px; border: 3px dashed #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 60px; background: rgba(255,255,255,0.1);">
+        👤
+    </div>
+
+    <div class="char-select">
+        <p style="margin: 5px 0;">Chọn nhân vật:</p>
+        <button class="char-btn" onclick="changeChar('👨‍💼')">👨‍💼</button>
+        <button class="char-btn" onclick="changeChar('👩‍💼')">👩‍💼</button>
+        <button class="char-btn" onclick="changeChar('👦')">👦</button>
+        <button class="char-btn" onclick="changeChar('👧')">👧</button>
+    </div>
+
+    <div style="font-size: 14px;">
+        <label><input type="checkbox" id="check-earphone"> Đeo tai nghe 🎧</label>
+        <label style="margin-left:10px;"><input type="checkbox" id="check-overload"> Chở quá tải 📦</label>
+    </div>
+
+    <p id="status-msg" style="color: #ffeb3b; margin: 10px;"></p>
+    <button id="start-btn" class="btn-start hidden" onclick="startGame()">BẮT ĐẦU (START)</button>
+</div>
+
+<div id="ui-layer">
+    <h2 id="rank-text">Cấp độ: Tập sự</h2>
+    <p id="score-text">Điểm an toàn: 100</p>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 400;
+    canvas.height = 600;
+
+    // ゲーム状態
+    let gameState = "wait"; 
+    let score = 100;
+    let equipmentCount = 0;
+    const requiredEquipment = 3;
+    let playerEmoji = '👨‍💼';
+    let playerX = canvas.width * 0.7; // 初期位置は右側
+    let offset = 0;
+    const keys = {};
+
+    // 信号・ペナルティ用
+    let signalY = -100;
+    let signalColor = "green";
+    let isWearingEarphones = false;
+    let isOverloaded = false;
+
+    // キー入力
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    // --- システム関数 ---
+    function closeTutorial() { document.getElementById('tutorial-screen').classList.add('hidden'); }
+    function changeChar(emoji) { playerEmoji = emoji; document.getElementById('drop-target').innerText = emoji; }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+    function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("text");
+        document.getElementById(data).style.visibility = "hidden";
+        equipmentCount++;
+        document.getElementById('status-msg').innerText = `Đã chuẩn bị: ${equipmentCount}/${requiredEquipment}`;
+        if (equipmentCount === requiredEquipment) {
+            document.getElementById('start-btn').classList.remove('hidden');
+            document.getElementById('drop-target').innerText = "✅";
+        }
+    }
+
+    function startGame() {
+        isWearingEarphones = document.getElementById('check-earphone').checked;
+        isOverloaded = document.getElementById('check-overload').checked;
+        document.getElementById('prep-screen').classList.add('hidden');
+        gameState = "playing";
+        draw();
+    }
+
+    function draw() {
+        if (gameState !== "playing") return;
+
+        // 1. 背景描画
+        ctx.fillStyle = "#2ecc71"; // 芝生
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 2. 道路描画
+        ctx.fillStyle = "#34495e";
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * 0.3, 0);
+        ctx.lineTo(canvas.width * 0.7, 0);
+        ctx.lineTo(canvas.width * 1.0, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.fill();
+
+        // 3. センターライン
+        ctx.strokeStyle = "#ffffff";
+        ctx.setLineDash([30, 40]);
+        ctx.lineDashOffset = -offset;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+
+        // 4. 信号機の描画
+        drawSignal();
+
+        // 5. プレイヤー（バイク + キャラ）
+        ctx.textAlign = "center";
+        ctx.font = "50px serif";
+        ctx.fillText("🏍️", playerX, canvas.height - 80);
+        ctx.font = "35px serif";
+        ctx.fillText(playerEmoji, playerX, canvas.height - 110);
+
+        update();
+        requestAnimationFrame(draw);
+    }
+
+    function drawSignal() {
+        ctx.fillStyle = "#333";
+        ctx.fillRect(canvas.width - 50, signalY, 20, 60);
+        // 赤
+        ctx.beginPath();
+        ctx.arc(canvas.width - 40, signalY + 15, 8, 0, Math.PI*2);
+        ctx.fillStyle = (signalColor === "red") ? "red" : "#555";
+        ctx.fill();
+        // 緑
+        ctx.beginPath();
+        ctx.arc(canvas.width - 40, signalY + 45, 8, 0, Math.PI*2);
+        ctx.fillStyle = (signalColor === "green") ? "#0f0" : "#555";
+        ctx.fill();
+    }
+
+    function update() {
+        let moveSpeed = isOverloaded ? 2 : 5;
+        if (keys['ArrowLeft'] && playerX > 40) playerX -= moveSpeed;
+        if (keys['ArrowRight'] && playerX < canvas.width - 40) playerX += moveSpeed;
+        
+        offset += 10;
+        signalY += 5;
+
+        // 信号のリセットと切り替え
+        if (signalY > canvas.height) {
+            signalY = -300;
+            signalColor = Math.random() > 0.5 ? "red" : "green";
+        }
+
+        // --- ルール判定 ---
+        // 1. 逆走 (左側通行はNG)
+        if (playerX < canvas.width * 0.35) applyPenalty(0.2, "Bạn đi ngược chiều!");
+        
+        // 2. 信号無視
+        if (signalColor === "red" && signalY > 400 && signalY < 500) {
+            gameOver("Bạn đã vượt đèn đỏ!");
+        }
+
+        // 3. イヤホン/過積載の継続減点
+        if (isWearingEarphones) applyPenalty(0.05, "Đeo tai nghe rất nguy hiểm!");
+        if (isOverloaded) applyPenalty(0.05, "Chở quá tải gây mất lái!");
+
+        // ランク更新
+        if (score > 80) document.getElementById('rank-text').innerText = "Cấp độ: Chuyên nghiệp";
+        else if (score > 50) document.getElementById('rank-text').innerText = "Cấp độ: Trung cấp";
+    }
+
+    function applyPenalty(amount, msg) {
+        score -= amount;
+        document.getElementById('score-text').innerText = "Điểm an toàn: " + Math.floor(score);
+        if (score <= 0) gameOver(msg);
+    }
+
+    function gameOver(msg) {
+        gameState = "gameOver";
+        alert("GAME OVER\n" + msg);
+        location.reload();
+    }
+</script>
+</body>
+</html>
