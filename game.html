@@ -3,59 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Driver Pro - Game Giáo Dục</title>
+    <title>Safety Driver Pro - Vạch Dừng An Toàn</title>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
         canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
         
-        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        #ui-layer { position: absolute; top: 10px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
+        #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: #555; color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
         
-        /* 操作ボタン */
-        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; }
-        .ctrl-btn { width: 70px; height: 70px; border-radius: 50%; border: none; font-weight: bold; color: white; user-select: none; font-size: 12px; cursor: pointer; }
+        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.9); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        #ui-layer { position: absolute; top: 40px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
+        
+        #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; }
+        .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; user-select: none; }
         .btn-move { background: rgba(255,255,255,0.3); }
         .btn-accel { background: #4caf50; }
         .btn-brake { background: #d32f2f; }
         
         .hidden { display: none !important; }
-        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; touch-action: none; }
+        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; }
+        #drop-target { width: 160px; height: 160px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; transition: 0.3s; }
+        #drop-target.hover { background: rgba(255,255,255,0.2); border-color: #4caf50; }
     </style>
 </head>
 <body>
 
-<div id="tutorial-screen" class="overlay" style="z-index: 30;">
-    <h2 style="color: #ffeb3b;">Luật chơi An toàn</h2>
-    <p>1. Trang bị đầy đủ<br>2. Nhấn Gas để đi, Thắng để dừng<br>3. Tuyệt đối không vượt đèn đỏ!</p>
-    <button style="padding:10px 20px;" onclick="document.getElementById('tutorial-screen').classList.add('hidden')">Tôi đã hiểu</button>
-</div>
+<a href="index.html" id="back-home">◀ Quay lại Top</a>
 
 <div id="prep-screen" class="overlay">
     <h2>Chuẩn bị hành trang</h2>
-    <div id="item-box" style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; margin-bottom: 20px;">
+    <p>Kéo vật dụng vào nhân vật 👤</p>
+    <div id="item-box">
         <span id="helmet" class="item" draggable="true" ondragstart="drag(event)">⛑️</span>
         <span id="shoes" class="item" draggable="true" ondragstart="drag(event)">👟</span>
         <span id="license" class="item" draggable="true" ondragstart="drag(event)">🪪</span>
     </div>
-    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" 
-         style="width: 150px; height: 150px; border: 4px dashed #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px;">👤</div>
-    <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Kéo đồ vào người 👤</p>
-    <button id="start-btn" class="hidden" style="padding:15px 30px; background:#4caf50; color:white; border-radius:20px;" onclick="startGame()">BẮT ĐẦU</button>
+    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="this.classList.add('hover')" ondragleave="this.classList.remove('hover')">
+        👤
+    </div>
+    <p id="status-msg" style="color: #ffeb3b; margin: 10px;">Chưa sẵn sàng</p>
+    <button id="start-btn" class="hidden" style="padding:15px 30px; background:#4caf50; color:white; border-radius:20px; border:none; cursor:pointer;" onclick="startGame()">BẮT ĐẦU</button>
 </div>
 
 <div id="ui-layer">
-    <div id="rank-text">Cấp độ: Tập sự</div>
-    <div id="score-text" style="font-size: 20px; font-weight: bold;">Điểm an toàn: 100</div>
+    <div id="score-text" style="font-size: 20px; font-weight: bold;">Điểm: 100</div>
     <div id="speed-text" style="color: #0f0;">Tốc độ: 0 km/h</div>
+    <div id="signal-notice" style="font-size: 18px; font-weight: bold;"></div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
 
 <div id="controls" class="hidden">
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true" ontouchend="keys['ArrowLeft']=false">Trái</button>
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true" ontouchend="keys['ArrowRight']=false">Phải</button>
-    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true" ontouchend="keys['Space']=false">THẮNG<br>(Brake)</button>
-    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true" ontouchend="keys['ArrowUp']=false">GA<br>(Gas)</button>
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true">Trái</button>
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true">Phải</button>
+    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true">THẮNG</button>
+    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true">GA</button>
 </div>
 
 <script>
@@ -66,32 +67,31 @@
     let gameState = "wait"; 
     let score = 100;
     let equipmentCount = 0;
-    let playerEmoji = '👨‍💼';
-    let playerX = 280; // 右側車線
+    let playerX = 280;
     let offset = 0;
-    let speed = 0; 
-    const maxSpeed = 12;
+    let speed = 0;
     const keys = {};
 
-    let signalY = -100;
-    let signalColor = "green";
+    // 信号と停止線の設定
+    let signalY = -500;
+    let signalColor = "red";
+    let signalTimer = 0;
+    const stopLineOffset = 80; // 信号機から停止線までの距離
 
-    // キー入力
-    window.addEventListener('keydown', e => { if(e.code==='Space') e.preventDefault(); keys[e.code] = true; });
-    window.addEventListener('keyup', e => keys[e.code] = false);
-
-    // D&D
-    function allowDrop(ev) { ev.preventDefault(); }
+    // ドラッグ＆ドロップ関数
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function allowDrop(ev) { ev.preventDefault(); }
     function drop(ev) {
         ev.preventDefault();
-        var data = ev.dataTransfer.getData("text");
+        const target = document.getElementById('drop-target');
+        target.classList.remove('hover');
+        const data = ev.dataTransfer.getData("text");
         document.getElementById(data).classList.add('hidden');
         equipmentCount++;
         document.getElementById('status-msg').innerText = `Đã chuẩn bị: ${equipmentCount}/3`;
-        if (equipmentCount === 3) {
+        if (equipmentCount >= 3) {
             document.getElementById('start-btn').classList.remove('hidden');
-            document.getElementById('drop-target').innerText = "✅";
+            target.innerText = "✅";
         }
     }
 
@@ -104,22 +104,31 @@
 
     function draw() {
         if (gameState !== "playing") return;
-
-        // 背景
+        
+        // 背景と道
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // 道路
         ctx.fillStyle = "#34495e"; ctx.beginPath();
         ctx.moveTo(120, 0); ctx.lineTo(280, 0); ctx.lineTo(400, 600); ctx.lineTo(0, 600); ctx.fill();
-        // 白線
+        
+        // センターライン
         ctx.strokeStyle = "#fff"; ctx.setLineDash([30, 40]); ctx.lineDashOffset = -offset;
         ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(200, 600); ctx.stroke();
 
+        // 停止線の描画 (信号機の手前)
+        ctx.setLineDash([]); // 停止線は実線
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(0, signalY + stopLineOffset);
+        ctx.lineTo(canvas.width, signalY + stopLineOffset);
+        ctx.stroke();
+
+        // 信号機
         drawSignal();
 
         // プレイヤー
-        ctx.textAlign = "center";
         ctx.font = "50px serif"; ctx.fillText("🏍️", playerX, 520);
-        ctx.font = "35px serif"; ctx.fillText(playerEmoji, playerX, 490);
+        ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, 490);
 
         update();
         requestAnimationFrame(draw);
@@ -127,46 +136,63 @@
 
     function drawSignal() {
         ctx.fillStyle = "#333"; ctx.fillRect(350, signalY, 20, 60);
+        // 赤信号
         ctx.beginPath(); ctx.arc(360, signalY+15, 8, 0, Math.PI*2);
-        ctx.fillStyle = (signalColor === "red") ? "red" : "#555"; ctx.fill();
+        ctx.fillStyle = (signalColor === "red") ? "red" : "#222"; ctx.fill();
+        // 青信号
         ctx.beginPath(); ctx.arc(360, signalY+45, 8, 0, Math.PI*2);
-        ctx.fillStyle = (signalColor === "green") ? "#0f0" : "#555"; ctx.fill();
+        ctx.fillStyle = (signalColor === "green") ? "#0f0" : "#222"; ctx.fill();
     }
 
     function update() {
-        // 加減速ロジック
-        if (keys['ArrowUp']) { 
-            speed += 0.2; // アクセル
-        } else if (keys['Space']) { 
-            speed -= 0.5; // ブレーキ
-        } else { 
-            speed -= 0.05; // 自然減速（空走）
-        }
+        // 加減速
+        if (keys['ArrowUp']) speed += 0.15;
+        else if (keys['Space']) speed -= 0.5;
+        else speed -= 0.05;
+        speed = Math.max(0, Math.min(speed, 10));
 
-        if (speed < 0) speed = 0;
-        if (speed > maxSpeed) speed = maxSpeed;
-
-        // 左右移動（スピードが出ている時のみ大きく動ける）
-        if (keys['ArrowLeft'] && playerX > 50) playerX -= (speed > 2 ? 5 : 2);
-        if (keys['ArrowRight'] && playerX < 350) playerX += (speed > 2 ? 5 : 2);
+        // 左右
+        if (keys['ArrowLeft'] && playerX > 50) playerX -= 4;
+        if (keys['ArrowRight'] && playerX < 350) playerX += 4;
         
         offset += speed;
-        signalY += speed * 0.5;
+        signalY += speed; // 信号が手前に来る速度
 
-        // 信号更新
+        // 信号管理（赤信号は5秒間 = 約300フレーム）
+        if (signalColor === "red") {
+            signalTimer++;
+            document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! HÃY DỪNG LẠI";
+            document.getElementById('signal-notice').style.color = "red";
+            if (signalTimer > 300) {
+                signalColor = "green";
+                signalTimer = 0;
+            }
+        } else {
+            document.getElementById('signal-notice').innerText = "ĐÈN XANH - HÃY ĐI TIẾP";
+            document.getElementById('signal-notice').style.color = "#0f0";
+        }
+
+        // 信号と停止線のループ
         if (signalY > canvas.height) {
-            signalY = -400;
-            signalColor = Math.random() > 0.5 ? "red" : "green";
+            signalY = -800;
+            signalColor = "red"; // 次の信号は必ず赤から開始
+            signalTimer = 0;
         }
 
-        // 違反判定
-        if (playerX < 150 && speed > 1) score -= 0.1; // 逆走
-        if (signalColor === "red" && signalY > 350 && signalY < 450 && speed > 1) {
-            gameOver("Bạn đã vượt đèn đỏ!");
+        // --- ルール判定：停止線を超えたか ---
+        // プレイヤーの位置(520px)が停止線(signalY + stopLineOffset)を超えた瞬間
+        if (signalColor === "red" && (signalY + stopLineOffset) > 420 && (signalY + stopLineOffset) < 520) {
+            if (speed > 0.1) { // 止まらずに超えようとした場合
+                gameOver("Bạn đã vượt vạch dừng khi đèn đỏ!");
+            }
+        }
+        // 完全に停止線を追い越した場合
+        if (signalColor === "red" && (signalY + stopLineOffset) > 520) {
+             gameOver("Bạn đã vượt đèn đỏ!");
         }
 
-        document.getElementById('score-text').innerText = "Điểm an toàn: " + Math.floor(score);
-        document.getElementById('speed-text').innerText = `Tốc độ: ${Math.floor(speed * 5)} km/h`;
+        document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
+        document.getElementById('speed-text').innerText = `Tốc độ: ${Math.floor(speed * 6)} km/h`;
     }
 
     function gameOver(msg) {
@@ -174,6 +200,14 @@
         alert("GAME OVER\n" + msg);
         location.reload();
     }
+
+    // スマホ用タッチエンド処理
+    window.addEventListener('touchend', () => {
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        keys['Space'] = false;
+        keys['ArrowUp'] = false;
+    });
 </script>
 </body>
 </html>
