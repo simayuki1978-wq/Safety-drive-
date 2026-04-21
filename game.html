@@ -1,246 +1,454 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Driver Pro - Sound Update</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
-        canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
-        #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: rgba(0,0,0,0.5); color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
-        .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.95); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
-        #ui-layer { position: absolute; top: 50px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
-        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; }
-        #drop-target { width: 280px; height: 220px; border: 5px dashed #fff; border-radius: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; background: rgba(255,255,255,0.1); position: relative; }
-        #drop-target * { pointer-events: none; } 
-        .course-btn { width: 100%; padding: 15px; margin: 8px 0; background: #3498db; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: bold; }
-        #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; pointer-events: none; }
-        .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; opacity: 0.7; pointer-events: auto; }
-        .btn-move { background: rgba(255,255,255,0.3); }
-        .btn-accel { background: #27ae60; }
-        .btn-brake { background: #e74c3c; }
-        .hidden { display: none !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safety Driver Pro - Ultimate</title>
+
+<style>
+body { margin:0; background:#87CEEB; overflow:hidden; font-family:sans-serif; }
+canvas { display:block; margin:0 auto; background:#2ecc71; border:4px solid #333; }
+
+#ui {
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    color:white;
+    text-align:center;
+    text-shadow:2px 2px 4px #000;
+}
+
+#controls {
+    position:absolute;
+    bottom:10px;
+    left:50%;
+    transform:translateX(-50%);
+    width:400px;
+    display:flex;
+    justify-content:space-around;
+}
+
+button {
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    border:none;
+    font-weight:bold;
+    opacity:0.8;
+}
+</style>
 </head>
+
 <body>
 
-<a href="index.html" id="back-home">◀ Quay lại Top</a>
-
-<div id="prep-screen" class="overlay">
-    <h2>Chuẩn bị hành trang</h2>
-    <div id="item-box">
-        <span id="item-helmet" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('helmet')" data-type="helmet">⛑️</span>
-        <span id="item-shoes" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('shoes')" data-type="shoes">👟</span>
-        <span id="item-license" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('license')" data-type="license">🪪</span>
-    </div>
-    <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
-        <div id="equipped-helmet" style="font-size: 50px; opacity: 0; position: absolute; top: 10px;">⛑️</div>
-        <div style="font-size: 80px;">👤</div>
-        <div id="equipped-license" style="font-size: 40px; opacity: 0; position: absolute; right: 40px; top: 80px;">🪪</div>
-        <div id="equipped-shoes" style="font-size: 50px; opacity: 0; position: absolute; bottom: 10px;">👟</div>
-    </div>
-    <div id="course-selection" class="hidden" style="width: 100%;">
-        <h3 style="color: #2ecc71;">Chọn đích đến</h3>
-        <button class="course-btn" onclick="startGame(5, 'Trường học', '🏫')">🏫 Trường học</button>
-        <button class="course-btn" onclick="startGame(10, 'Siêu thị', '🛒')">🛒 Siêu thị</button>
-        <button class="course-btn" onclick="startGame(15, 'Trung tâm TM', '🏬')">🏬 Trung tâm TM</button>
-    </div>
+<div id="ui">
+    <div id="score">Score: 100</div>
+    <div id="speed">0 km/h</div>
+    <div id="notice"></div>
 </div>
 
-<div id="ui-layer">
-    <div id="score-text" style="font-size: 24px; font-weight: bold;">Điểm: 100</div>
-    <div id="progress-text" style="color: #f1c40f; font-size: 18px;">Ngã tư: 0 / 0</div>
-    <div id="speed-text" style="color: #2ecc71; font-size: 16px;">0 km/h</div>
-    <div id="signal-notice" style="font-size: 20px; font-weight: bold; margin-top: 10px; height: 30px;"></div>
-</div>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
 
-<canvas id="gameCanvas"></canvas>
-
-<div id="controls" class="hidden">
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true">Trái</button>
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true">Phải</button>
-    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true">THẮNG</button>
-    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true">GA</button>
+<div id="controls">
+    <button id="left">←</button>
+    <button id="right">→</button>
+    <button id="accel">▲</button>
+    <button id="brake">■</button>
 </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 400; canvas.height = 600;
-
-    let gameState = "wait", score = 100, equipmentCount = 0, offset = 0, speed = 0;
-    let playerX = 200, playerY = canvas.height * 0.82; 
-    const keys = {};
-
-    let targetIntersections = 0, passedIntersections = 0, destinationName = "", destinationIcon = "";
-    let signalY = -1200, signalColor = "red", signalTimer = 0;
-    let goalAreaY = -5000, spawnQueue = [], npcs = [], walkers = [], bonusItems = [], spawnTimer = 0;
-    const stopLineOffset = 130;
-
-    // --- 音声エンジン (Web Audio API) ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playTone(freq, type, duration, vol=0.1) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+// ===== INPUT =====
+class InputManager {
+    constructor() {
+        this.keys = {};
+        this.bind();
     }
 
-    // BGM再生
-    let bgmTimer = 0;
-    const adventureMelody = [261, 293, 329, 349, 392, 329, 261, 392]; // C D E F G E C G
-    function updateBGM() {
-        if (gameState !== "playing" || passedIntersections >= targetIntersections) return;
-        bgmTimer++;
-        if (bgmTimer % 30 === 0) { // テンポ調整
-            const note = adventureMelody[(bgmTimer / 30) % adventureMelody.length];
-            playTone(note, 'triangle', 0.5, 0.05);
+    bind() {
+        window.addEventListener('keydown', e => this.keys[e.code] = true);
+        window.addEventListener('keyup', e => this.keys[e.code] = false);
+
+        const map = {
+            left: 'ArrowLeft',
+            right: 'ArrowRight',
+            accel: 'ArrowUp',
+            brake: 'Space'
+        };
+
+        Object.entries(map).forEach(([id, key]) => {
+            const el = document.getElementById(id);
+
+            el.addEventListener('touchstart', () => this.keys[key] = true);
+            el.addEventListener('touchend', () => this.keys[key] = false);
+
+            el.addEventListener('mousedown', () => this.keys[key] = true);
+            el.addEventListener('mouseup', () => this.keys[key] = false);
+        });
+    }
+}
+
+// ===== AUDIO =====
+class AudioManager {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.lastNote = 0;
+        this.melody = [261,293,329,349,392,329,261,392];
+    }
+
+    unlock() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    }
+
+    play(freq, duration=0.2, vol=0.1) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.frequency.value = freq;
+        gain.gain.value = vol;
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    playSiren() {
+        this.play(800,0.1,0.1);
+        setTimeout(()=>this.play(1000,0.1,0.1),100);
+    }
+
+    updateBGM() {
+        const now = this.ctx.currentTime;
+        if (now - this.lastNote > 0.4) {
+            const i = Math.floor(now / 0.4) % this.melody.length;
+            this.play(this.melody[i],0.25,0.05);
+            this.lastNote = now;
+        }
+    }
+}
+
+// ===== TRAFFIC LIGHT =====
+class TrafficLight {
+    constructor(y) {
+        this.y = y;
+        this.state = "red";
+        this.timer = 0;
+        this.stopLineOffset = 130;
+    }
+
+    update(speed) {
+        this.y += speed;
+        this.timer++;
+
+        if (this.state === "red" && this.timer > 300) {
+            this.state = "green";
+            this.timer = 0;
+        } else if (this.state === "green" && this.timer > 200) {
+            this.state = "red";
+            this.timer = 0;
         }
     }
 
-    // 効果音
-    const sounds = {
-        item: () => playTone(880, 'sine', 0.3, 0.2), // ポーン
-        error: () => { playTone(150, 'sawtooth', 0.2, 0.2); playTone(120, 'sawtooth', 0.4, 0.2); }, // ブッブー
-        goal: () => { // お祝いの短い曲
-            [523, 659, 783, 1046].forEach((f, i) => {
-                setTimeout(() => playTone(f, 'square', 0.6, 0.1), i * 150);
+    draw(ctx) {
+        ctx.fillStyle = "#222";
+        ctx.fillRect(340, this.y, 30, 80);
+
+        ctx.fillStyle = this.state === "red" ? "red" : "#444";
+        ctx.beginPath();
+        ctx.arc(355, this.y+20, 10, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle = this.state === "green" ? "#0f0" : "#444";
+        ctx.beginPath();
+        ctx.arc(355, this.y+60, 10, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(0, this.y + this.stopLineOffset);
+        ctx.lineTo(400, this.y + this.stopLineOffset);
+        ctx.stroke();
+    }
+
+    isViolation(playerY, speed) {
+        const lineY = this.y + this.stopLineOffset;
+        return (
+            this.state === "red" &&
+            lineY > playerY - 50 &&
+            lineY < playerY + 30 &&
+            speed > 0.5
+        );
+    }
+
+    isPassed() {
+        return this.y > 600;
+    }
+
+    reset(y) {
+        this.y = y;
+        this.state = "red";
+        this.timer = 0;
+    }
+}
+
+// ===== GAME =====
+class Game {
+    constructor(canvas) {
+        this.ctx = canvas.getContext('2d');
+
+        this.player = { x:200, y:500 };
+        this.speed = 0;
+        this.score = 100;
+        this.offset = 0;
+
+        this.npcs = [];
+        this.spawnTimer = 0;
+
+        this.notice = "";
+        this.noticeTimer = 0;
+
+        this.input = new InputManager();
+        this.audio = new AudioManager();
+        this.light = new TrafficLight(-1200);
+
+        // crash
+        this.crashed = false;
+        this.crashTimer = 0;
+        this.shakePower = 0;
+        this.particles = [];
+
+        // ambulance
+        this.ambulance = null;
+
+        this.loop = this.loop.bind(this);
+    }
+
+    start() {
+        document.addEventListener('click', () => this.audio.unlock(), { once:true });
+        requestAnimationFrame(this.loop);
+    }
+
+    spawnNPC() {
+        this.spawnTimer++;
+        if (this.spawnTimer > 60) {
+            this.npcs.push({
+                x:100 + Math.random()*200,
+                y:-100,
+                baseSpeed:1 + Math.random()*2,
+                currentSpeed:0
+            });
+            this.spawnTimer = 0;
+        }
+    }
+
+    spawnAmbulance() {
+        if (this.ambulance || Math.random() > 0.002) return;
+
+        this.ambulance = {
+            x: this.player.x,
+            y: this.player.y + 200,
+            speed: 6
+        };
+
+        this.showNotice("🚑 Give Way!");
+    }
+
+    triggerCrash(npc) {
+        this.crashed = true;
+        this.crashTimer = 120;
+        this.speed = 0;
+        this.score = Math.max(0, this.score - 30);
+        this.audio.play(80,0.5,0.3);
+        this.showNotice("💥 ACCIDENT!");
+        this.shakePower = 10;
+
+        for (let i=0;i<15;i++) {
+            this.particles.push({
+                x:this.player.x,
+                y:this.player.y,
+                vx:(Math.random()-0.5)*5,
+                vy:(Math.random()-0.5)*5,
+                life:30
             });
         }
-    };
 
-    // --- ゲームロジック ---
-    function allowDrop(ev) { ev.preventDefault(); }
-    function drag(ev) { ev.dataTransfer.setData("text", ev.target.dataset.type); }
-    function drop(ev) { ev.preventDefault(); equip(ev.dataTransfer.getData("text")); }
-    function equip(type) {
-        const source = document.getElementById('item-' + type);
-        const target = document.getElementById('equipped-' + type);
-        if (source && !source.classList.contains('hidden')) {
-            source.classList.add('hidden');
-            target.style.opacity = "1";
-            equipmentCount++;
-            if (equipmentCount >= 3) document.getElementById('course-selection').classList.remove('hidden');
-        }
+        npc.currentSpeed = 0;
     }
 
-    function startGame(num, name, icon) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        targetIntersections = num; destinationName = name; destinationIcon = icon;
-        document.getElementById('prep-screen').classList.add('hidden');
-        document.getElementById('controls').classList.remove('hidden');
-        initSpawnQueue();
-        gameState = "playing";
-        draw();
+    showNotice(msg) {
+        this.notice = msg;
+        this.noticeTimer = 60;
     }
 
-    function initSpawnQueue() {
-        spawnQueue = ["🚗", "🚌", "🚶", "📱", "🎧", "🏍️", "🏍️", "🏍️", "🚲", "🚲"].sort(() => Math.random() - 0.5);
-    }
-
-    function spawnNext() {
-        if (spawnQueue.length === 0) return;
-        spawnTimer++;
-        if (spawnTimer > 100) { 
-            let type = spawnQueue.shift();
-            if (type === "🚶") walkers.push({ x: -50, y: 100 + Math.random()*200, c: false });
-            else if (type === "📱" || type === "🎧") bonusItems.push({ x: 120 + Math.random()*160, y: -100, type: type, c: false });
-            else npcs.push({ x: 100 + Math.random()*200, y: -150, type: type, s: 1+Math.random()*1.5, c: false });
-            spawnTimer = 0;
-        }
-    }
-
-    function draw() {
-        if (gameState !== "playing") return;
-        updateBGM(); // BGM更新
-        ctx.fillStyle = "#2ecc71"; ctx.fillRect(0,0,400,600);
-        ctx.fillStyle = "#34495e"; ctx.beginPath();
-        ctx.moveTo(100,0); ctx.lineTo(300,0); ctx.lineTo(400,600); ctx.lineTo(0,600); ctx.fill();
-        ctx.strokeStyle = "#fff"; ctx.setLineDash([30, 40]); ctx.lineDashOffset = -offset;
-        ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(200,0); ctx.lineTo(200,600); ctx.stroke();
-        
-        if (passedIntersections >= targetIntersections) drawGoal();
-        else {
-            ctx.setLineDash([]); ctx.lineWidth = 12; ctx.strokeStyle = "#fff";
-            ctx.beginPath(); ctx.moveTo(0, signalY+stopLineOffset); ctx.lineTo(400, signalY+stopLineOffset); ctx.stroke();
-            drawSignal();
+    update() {
+        if (this.crashed) {
+            this.crashTimer--;
+            if (this.crashTimer <= 0) this.crashed = false;
         }
 
-        ctx.shadowBlur = 15; ctx.shadowColor = "white"; ctx.textAlign = "center";
-        npcs.forEach(n => { ctx.font = "45px serif"; ctx.fillText(n.type, n.x, n.y); });
-        walkers.forEach(w => { ctx.font = "55px serif"; ctx.fillText("🚶", w.x, w.y); });
-        bonusItems.forEach(i => { ctx.font = "40px serif"; ctx.fillText(i.type, i.x, i.y); });
-        ctx.shadowBlur = 0;
-        ctx.font = "55px serif"; ctx.fillText("🏍️", playerX, playerY);
-        ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, playerY - 30);
+        const keys = this.input.keys;
 
-        update();
-        requestAnimationFrame(draw);
-    }
+        if (!this.crashed) {
+            if (keys['ArrowUp']) this.speed += 0.2;
+            else if (keys['Space']) this.speed -= 0.4;
+            else this.speed *= 0.98;
+        }
 
-    function drawGoal() {
-        ctx.fillStyle = "rgba(46, 204, 113, 0.9)"; ctx.fillRect(50, goalAreaY, 300, 200);
-        ctx.strokeStyle = "white"; ctx.lineWidth = 5; ctx.strokeRect(50, goalAreaY, 300, 200);
-        ctx.textAlign = "center"; ctx.font = "120px serif"; ctx.fillText(destinationIcon, 200, goalAreaY + 130);
-        ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.fillText(destinationName.toUpperCase(), 200, goalAreaY + 40);
-    }
+        this.speed = Math.max(0, Math.min(this.speed, 8));
 
-    function drawSignal() {
-        ctx.fillStyle = "#222"; ctx.fillRect(340, signalY, 30, 80);
-        ctx.fillStyle = (signalColor==="red")?"red":"#444"; ctx.beginPath(); ctx.arc(355, signalY+20, 10, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = (signalColor==="green")?"#0f0":"#444"; ctx.beginPath(); ctx.arc(355, signalY+60, 10, 0, Math.PI*2); ctx.fill();
-    }
+        if (keys['ArrowLeft']) this.player.x -= 4;
+        if (keys['ArrowRight']) this.player.x += 4;
 
-    function update() {
-        if (keys['ArrowUp']) speed += 0.12; else if (keys['Space']) speed -= 0.4; else speed -= 0.04;
-        speed = Math.max(0, Math.min(speed, 9));
-        if (keys['ArrowLeft'] && playerX > 60) playerX -= 4.5;
-        if (keys['ArrowRight'] && playerX < 340) playerX += 4.5;
-        offset += speed; 
-        
-        if (passedIntersections < targetIntersections) spawnNext();
+        this.offset += this.speed;
 
-        if (passedIntersections >= targetIntersections) {
-            goalAreaY += speed;
-            if (goalAreaY > playerY - 150) { sounds.goal(); gameClear(); return; }
-        } else {
-            signalY += speed;
-            if (signalColor === "red" && signalY + stopLineOffset > playerY - 150) {
-                signalTimer++;
-                if (signalTimer > 300) { signalColor = "green"; signalTimer = 0; }
-            }
-            if (signalY > 600) {
-                signalY = -1500; signalColor = "red"; signalTimer = 0;
-                passedIntersections++;
-                initSpawnQueue();
-                if (passedIntersections === targetIntersections) goalAreaY = -400;
+        this.spawnNPC();
+        this.spawnAmbulance();
+
+        const lightLine = this.light.y + this.light.stopLineOffset;
+
+        this.npcs.forEach((n,i) => {
+            const approaching = n.y < lightLine - 20 && n.y > lightLine - 120;
+
+            if (this.light.state === "red" && approaching) {
+                n.currentSpeed *= 0.9;
+            } else {
+                n.currentSpeed += (n.baseSpeed - n.currentSpeed) * 0.05;
             }
 
-            npcs.forEach(n => { if(!n.c && Math.abs(playerX-n.x)<45 && Math.abs(playerY-n.y)<50) { n.c=true; score-=5; sounds.error(); } n.y += speed*0.4 + n.s; });
-            walkers.forEach(w => { if(!w.c && Math.abs(playerX-w.x)<50 && Math.abs(playerY-w.y)<60) { w.c=true; score-=10; sounds.error(); } w.x += 1.8; w.y += speed; });
-            bonusItems.forEach(i => { if(!i.c && Math.abs(playerX-i.x)<40 && Math.abs(playerY-i.y)<40) { i.c=true; score-=10; sounds.item(); alert("Không dùng điện thoại!"); } i.y += speed; });
-            if (signalColor === "red" && (signalY+stopLineOffset) > playerY - 50 && (signalY+stopLineOffset) < playerY + 30 && speed > 0.4) {
-                sounds.error(); gameOver("Bạn đã vượt đèn đỏ!");
+            // 車間距離
+            const front = this.npcs[i-1];
+            if (front && Math.abs(n.y - front.y) < 60) {
+                n.currentSpeed = Math.min(n.currentSpeed, front.currentSpeed);
             }
+
+            n.y += n.currentSpeed + this.speed*0.5;
+
+            if (!this.crashed &&
+                Math.abs(this.player.x - n.x) < 40 &&
+                Math.abs(this.player.y - n.y) < 50) {
+                this.triggerCrash(n);
+            }
+        });
+
+        this.npcs = this.npcs.filter(n => n.y < 700);
+
+        // traffic light
+        this.light.update(this.speed);
+
+        if (this.light.isViolation(this.player.y, this.speed)) {
+            this.speed = 0;
+            this.showNotice("STOP! Red Light!");
+            this.audio.play(120,0.3,0.2);
         }
-        document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
-        document.getElementById('progress-text').innerText = `Ngã tư: ${Math.min(passedIntersections, targetIntersections)} / ${targetIntersections}`;
-        document.getElementById('speed-text').innerText = `${Math.floor(speed*7)} km/h`;
-        if (score <= 0) gameOver("Hết điểm!");
+
+        if (this.light.isPassed()) this.light.reset(-1500);
+
+        // ambulance
+        if (this.ambulance) {
+            const a = this.ambulance;
+            a.y -= a.speed;
+
+            if (Math.random() < 0.05) this.audio.playSiren();
+
+            const givingWay = this.player.x < 120 || this.player.x > 280;
+
+            if (!givingWay &&
+                Math.abs(this.player.y - a.y) < 80) {
+                this.score = Math.max(0, this.score - 20);
+                this.showNotice("❗ Give Way!");
+            }
+
+            if (a.y < -100) this.ambulance = null;
+        }
+
+        // particles
+        this.particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+        });
+        this.particles = this.particles.filter(p => p.life > 0);
+
+        if (this.noticeTimer > 0) this.noticeTimer--;
+
+        if (this.shakePower > 0) this.shakePower *= 0.9;
+
+        this.audio.updateBGM();
     }
 
-    function gameOver(m) { gameState="over"; alert(m); location.reload(); }
-    function gameClear() { gameState="clear"; alert(`CHIẾN THẮNG!\nBạn đã đến ${destinationName} an toàn!`); location.reload(); }
-    window.addEventListener('touchend', () => { Object.keys(keys).forEach(k => keys[k]=false); });
-    window.addEventListener('keydown', (e) => { keys[e.code] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+    render() {
+        const ctx = this.ctx;
+
+        let shakeX = (Math.random()-0.5)*this.shakePower;
+        let shakeY = (Math.random()-0.5)*this.shakePower;
+
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillRect(0,0,400,600);
+
+        ctx.fillStyle = "#34495e";
+        ctx.beginPath();
+        ctx.moveTo(100,0);
+        ctx.lineTo(300,0);
+        ctx.lineTo(400,600);
+        ctx.lineTo(0,600);
+        ctx.fill();
+
+        ctx.strokeStyle = "#fff";
+        ctx.setLineDash([30,40]);
+        ctx.lineDashOffset = -this.offset;
+        ctx.beginPath();
+        ctx.moveTo(200,0);
+        ctx.lineTo(200,600);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        this.light.draw(ctx);
+
+        ctx.font = "40px serif";
+        this.npcs.forEach(n => ctx.fillText("🚗", n.x, n.y));
+
+        if (this.ambulance) {
+            ctx.font = "50px serif";
+            ctx.fillText("🚑", this.ambulance.x, this.ambulance.y);
+        }
+
+        ctx.font = "50px serif";
+        ctx.fillText("🏍️", this.player.x, this.player.y);
+
+        this.particles.forEach(p => {
+            ctx.fillStyle = "orange";
+            ctx.fillRect(p.x, p.y, 4, 4);
+        });
+
+        ctx.restore();
+
+        if (this.noticeTimer > 0) {
+            ctx.fillStyle = "yellow";
+            ctx.font = "20px sans-serif";
+            ctx.fillText(this.notice, 200, 100);
+        }
+
+        document.getElementById("score").innerText = "Score: " + this.score;
+        document.getElementById("speed").innerText = Math.floor(this.speed*10) + " km/h";
+    }
+
+    loop() {
+        this.update();
+        this.render();
+        requestAnimationFrame(this.loop);
+    }
+}
+
+// ===== START =====
+const game = new Game(document.getElementById("gameCanvas"));
+game.start();
 </script>
+
 </body>
 </html>
