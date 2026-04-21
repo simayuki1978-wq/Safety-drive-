@@ -3,32 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Safety Driver Pro - Final Polish</title>
+    <title>Safety Driver Pro - Sound Update</title>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
         canvas { display: block; background: #2ecc71; margin: 0 auto; border: 4px solid #333; width: 100%; max-width: 400px; height: auto; }
-        
         #back-home { position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px 15px; background: rgba(0,0,0,0.5); color: white; border-radius: 5px; text-decoration: none; font-size: 12px; }
-        
         .overlay { position: absolute; top:0; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; height: 100%; background: rgba(0,0,0,0.95); color: white; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
         #ui-layer { position: absolute; top: 50px; left:50%; transform: translateX(-50%); width: 100%; max-width: 400px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; z-index: 5; text-align: center; }
-        
-        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; transition: transform 0.2s; }
-        .item:hover { transform: scale(1.1); }
-        
+        .item { font-size: 50px; cursor: grab; margin: 10px; display: inline-block; }
         #drop-target { width: 280px; height: 220px; border: 5px dashed #fff; border-radius: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px; background: rgba(255,255,255,0.1); position: relative; }
         #drop-target * { pointer-events: none; } 
-
         .course-btn { width: 100%; padding: 15px; margin: 8px 0; background: #3498db; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: bold; }
-        .course-btn:hover { background: #2ecc71; }
-
-        /* 操作ボタン（少し透明に、主人公より下に配置） */
         #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; display: flex; justify-content: space-around; z-index: 15; pointer-events: none; }
         .ctrl-btn { width: 65px; height: 65px; border-radius: 50%; border: none; font-weight: bold; color: white; font-size: 11px; cursor: pointer; opacity: 0.7; pointer-events: auto; }
         .btn-move { background: rgba(255,255,255,0.3); }
-        .btn-accel { background: #27ae60; box-shadow: 0 4px #1e8449; }
-        .btn-brake { background: #e74c3c; box-shadow: 0 4px #c0392b; }
-        
+        .btn-accel { background: #27ae60; }
+        .btn-brake { background: #e74c3c; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -43,21 +33,17 @@
         <span id="item-shoes" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('shoes')" data-type="shoes">👟</span>
         <span id="item-license" class="item" draggable="true" ondragstart="drag(event)" onclick="equip('license')" data-type="license">🪪</span>
     </div>
-    
     <div id="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
         <div id="equipped-helmet" style="font-size: 50px; opacity: 0; position: absolute; top: 10px;">⛑️</div>
         <div style="font-size: 80px;">👤</div>
         <div id="equipped-license" style="font-size: 40px; opacity: 0; position: absolute; right: 40px; top: 80px;">🪪</div>
         <div id="equipped-shoes" style="font-size: 50px; opacity: 0; position: absolute; bottom: 10px;">👟</div>
     </div>
-    
-    <p id="status-msg">Kéo thả hoặc Chạm vào đồ vật</p>
-    
     <div id="course-selection" class="hidden" style="width: 100%;">
         <h3 style="color: #2ecc71;">Chọn đích đến</h3>
-        <button class="course-btn" onclick="startGame(5, 'Trường học', '🏫')">🏫 Trường học (5 ngã tư)</button>
-        <button class="course-btn" onclick="startGame(10, 'Siêu thị', '🛒')">🛒 Siêu thị (10 ngã tư)</button>
-        <button class="course-btn" onclick="startGame(15, 'Trung tâm TM', '🏬')">🏬 Trung tâm TM (15 ngã tư)</button>
+        <button class="course-btn" onclick="startGame(5, 'Trường học', '🏫')">🏫 Trường học</button>
+        <button class="course-btn" onclick="startGame(10, 'Siêu thị', '🛒')">🛒 Siêu thị</button>
+        <button class="course-btn" onclick="startGame(15, 'Trung tâm TM', '🏬')">🏬 Trung tâm TM</button>
     </div>
 </div>
 
@@ -71,10 +57,10 @@
 <canvas id="gameCanvas"></canvas>
 
 <div id="controls" class="hidden">
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true" ontouchend="keys['ArrowLeft']=false">Trái</button>
-    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true" ontouchend="keys['ArrowRight']=false">Phải</button>
-    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true" ontouchend="keys['Space']=false">THẮNG</button>
-    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true" ontouchend="keys['ArrowUp']=false">GA</button>
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowLeft']=true" onmouseup="keys['ArrowLeft']=false" ontouchstart="keys['ArrowLeft']=true">Trái</button>
+    <button class="ctrl-btn btn-move" onmousedown="keys['ArrowRight']=true" onmouseup="keys['ArrowRight']=false" ontouchstart="keys['ArrowRight']=true">Phải</button>
+    <button class="ctrl-btn btn-brake" onmousedown="keys['Space']=true" onmouseup="keys['Space']=false" ontouchstart="keys['Space']=true">THẮNG</button>
+    <button class="ctrl-btn btn-accel" onmousedown="keys['ArrowUp']=true" onmouseup="keys['ArrowUp']=false" ontouchstart="keys['ArrowUp']=true">GA</button>
 </div>
 
 <script>
@@ -83,23 +69,57 @@
     canvas.width = 400; canvas.height = 600;
 
     let gameState = "wait", score = 100, equipmentCount = 0, offset = 0, speed = 0;
-    // 主人公の位置を少し上に（画面下部から約20%）
     let playerX = 200, playerY = canvas.height * 0.82; 
     const keys = {};
 
     let targetIntersections = 0, passedIntersections = 0, destinationName = "", destinationIcon = "";
     let signalY = -1200, signalColor = "red", signalTimer = 0;
-    let goalAreaY = -5000; // ゴール建物の初期位置（画面外）
+    let goalAreaY = -5000, spawnQueue = [], npcs = [], walkers = [], bonusItems = [], spawnTimer = 0;
     const stopLineOffset = 130;
 
-    let npcs = [], walkers = [], bonusItems = [];
+    // --- 音声エンジン (Web Audio API) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playTone(freq, type, duration, vol=0.1) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
 
-    // --- ドラッグ＆ドロップ ---
-    function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.style.background = "rgba(46, 204, 113, 0.3)"; }
-    function dragLeave(ev) { ev.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"; }
+    // BGM再生
+    let bgmTimer = 0;
+    const adventureMelody = [261, 293, 329, 349, 392, 329, 261, 392]; // C D E F G E C G
+    function updateBGM() {
+        if (gameState !== "playing" || passedIntersections >= targetIntersections) return;
+        bgmTimer++;
+        if (bgmTimer % 30 === 0) { // テンポ調整
+            const note = adventureMelody[(bgmTimer / 30) % adventureMelody.length];
+            playTone(note, 'triangle', 0.5, 0.05);
+        }
+    }
+
+    // 効果音
+    const sounds = {
+        item: () => playTone(880, 'sine', 0.3, 0.2), // ポーン
+        error: () => { playTone(150, 'sawtooth', 0.2, 0.2); playTone(120, 'sawtooth', 0.4, 0.2); }, // ブッブー
+        goal: () => { // お祝いの短い曲
+            [523, 659, 783, 1046].forEach((f, i) => {
+                setTimeout(() => playTone(f, 'square', 0.6, 0.1), i * 150);
+            });
+        }
+    };
+
+    // --- ゲームロジック ---
+    function allowDrop(ev) { ev.preventDefault(); }
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.dataset.type); }
-    function drop(ev) { ev.preventDefault(); dragLeave(ev); equip(ev.dataTransfer.getData("text")); }
-
+    function drop(ev) { ev.preventDefault(); equip(ev.dataTransfer.getData("text")); }
     function equip(type) {
         const source = document.getElementById('item-' + type);
         const target = document.getElementById('equipped-' + type);
@@ -107,46 +127,47 @@
             source.classList.add('hidden');
             target.style.opacity = "1";
             equipmentCount++;
-            if (equipmentCount >= 3) {
-                document.getElementById('status-msg').classList.add('hidden');
-                document.getElementById('course-selection').classList.remove('hidden');
-            }
+            if (equipmentCount >= 3) document.getElementById('course-selection').classList.remove('hidden');
         }
     }
 
     function startGame(num, name, icon) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         targetIntersections = num; destinationName = name; destinationIcon = icon;
         document.getElementById('prep-screen').classList.add('hidden');
         document.getElementById('controls').classList.remove('hidden');
+        initSpawnQueue();
         gameState = "playing";
         draw();
     }
 
-    // --- オブジェクト管理（ゴール近くまで出現するように調整） ---
-    function spawnAll() {
-        // 残り交差点数に応じて出現率を微調整（ゴール直前は少し減らすが、全行程で出るように）
-        let remaining = targetIntersections - passedIntersections;
-        let spawnRate = (remaining > 1) ? 1.0 : 0.5;
+    function initSpawnQueue() {
+        spawnQueue = ["🚗", "🚌", "🚶", "📱", "🎧", "🏍️", "🏍️", "🏍️", "🚲", "🚲"].sort(() => Math.random() - 0.5);
+    }
 
-        if(npcs.length < 3 && Math.random() < 0.03 * spawnRate) npcs.push({ x: 100 + Math.random()*200, y: -200, type: ["🚗","🚲","🚌","🛵"][Math.floor(Math.random()*4)], s: 1+Math.random()*2, c: false });
-        if(walkers.length < 1 && Math.random() < 0.01 * spawnRate) walkers.push({ x: -50, y: 150+Math.random()*300, c: false });
-        if(bonusItems.length < 1 && Math.random() < 0.005 * spawnRate) bonusItems.push({ x: 120+Math.random()*160, y: -100, type: Math.random()>0.5?"📱":"🎧", c: false });
+    function spawnNext() {
+        if (spawnQueue.length === 0) return;
+        spawnTimer++;
+        if (spawnTimer > 100) { 
+            let type = spawnQueue.shift();
+            if (type === "🚶") walkers.push({ x: -50, y: 100 + Math.random()*200, c: false });
+            else if (type === "📱" || type === "🎧") bonusItems.push({ x: 120 + Math.random()*160, y: -100, type: type, c: false });
+            else npcs.push({ x: 100 + Math.random()*200, y: -150, type: type, s: 1+Math.random()*1.5, c: false });
+            spawnTimer = 0;
+        }
     }
 
     function draw() {
         if (gameState !== "playing") return;
-        
+        updateBGM(); // BGM更新
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(0,0,400,600);
         ctx.fillStyle = "#34495e"; ctx.beginPath();
         ctx.moveTo(100,0); ctx.lineTo(300,0); ctx.lineTo(400,600); ctx.lineTo(0,600); ctx.fill();
         ctx.strokeStyle = "#fff"; ctx.setLineDash([30, 40]); ctx.lineDashOffset = -offset;
         ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(200,0); ctx.lineTo(200,600); ctx.stroke();
         
-        // ゴール建物の描画（全交差点をクリアした後）
-        if (passedIntersections >= targetIntersections) {
-            drawGoal();
-        } else {
-            // 停止線と信号機（通常走行時）
+        if (passedIntersections >= targetIntersections) drawGoal();
+        else {
             ctx.setLineDash([]); ctx.lineWidth = 12; ctx.strokeStyle = "#fff";
             ctx.beginPath(); ctx.moveTo(0, signalY+stopLineOffset); ctx.lineTo(400, signalY+stopLineOffset); ctx.stroke();
             drawSignal();
@@ -157,8 +178,6 @@
         walkers.forEach(w => { ctx.font = "55px serif"; ctx.fillText("🚶", w.x, w.y); });
         bonusItems.forEach(i => { ctx.font = "40px serif"; ctx.fillText(i.type, i.x, i.y); });
         ctx.shadowBlur = 0;
-
-        // プレイヤー（ボタンに隠れない位置）
         ctx.font = "55px serif"; ctx.fillText("🏍️", playerX, playerY);
         ctx.font = "35px serif"; ctx.fillText("👨‍💼", playerX, playerY - 30);
 
@@ -167,18 +186,10 @@
     }
 
     function drawGoal() {
-        // ゴールエリア（道路全体を覆う）
-        ctx.fillStyle = "rgba(46, 204, 113, 0.8)";
-        ctx.fillRect(50, goalAreaY, 300, 200);
+        ctx.fillStyle = "rgba(46, 204, 113, 0.9)"; ctx.fillRect(50, goalAreaY, 300, 200);
         ctx.strokeStyle = "white"; ctx.lineWidth = 5; ctx.strokeRect(50, goalAreaY, 300, 200);
-
-        // 建物のイラスト
-        ctx.textAlign = "center"; ctx.font = "120px serif";
-        ctx.fillText(destinationIcon, 200, goalAreaY + 130);
-
-        // 目的地の文字（建物上部）
-        ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif";
-        ctx.fillText(destinationName.toUpperCase(), 200, goalAreaY + 40);
+        ctx.textAlign = "center"; ctx.font = "120px serif"; ctx.fillText(destinationIcon, 200, goalAreaY + 130);
+        ctx.fillStyle = "white"; ctx.font = "bold 24px sans-serif"; ctx.fillText(destinationName.toUpperCase(), 200, goalAreaY + 40);
     }
 
     function drawSignal() {
@@ -192,59 +203,44 @@
         speed = Math.max(0, Math.min(speed, 9));
         if (keys['ArrowLeft'] && playerX > 60) playerX -= 4.5;
         if (keys['ArrowRight'] && playerX < 340) playerX += 4.5;
-        
         offset += speed; 
         
-        spawnAll();
+        if (passedIntersections < targetIntersections) spawnNext();
 
         if (passedIntersections >= targetIntersections) {
-            // ゴールモード：建物が手前に来る
             goalAreaY += speed;
-            signalY = -1200; // 信号は画面外へ
-            document.getElementById('signal-notice').innerText = "BẠN ĐÃ ĐẾN NƠI! (ARRIVED)";
-            document.getElementById('signal-notice').style.color = "#0f0";
-            
-            // 建物に接触したらクリア
-            if (goalAreaY > playerY - 150) { gameClear(); return; }
+            if (goalAreaY > playerY - 150) { sounds.goal(); gameClear(); return; }
         } else {
-            // 通常走行モード：信号機管理
             signalY += speed;
             if (signalColor === "red" && signalY + stopLineOffset > playerY - 150) {
                 signalTimer++;
-                document.getElementById('signal-notice').innerText = "ĐÈN ĐỎ! (" + Math.ceil((300-signalTimer)/60) + "s)";
-                document.getElementById('signal-notice').style.color = "red";
                 if (signalTimer > 300) { signalColor = "green"; signalTimer = 0; }
-            } else if (signalColor === "green") {
-                document.getElementById('signal-notice').innerText = "ĐÈN XANH!";
-                document.getElementById('signal-notice').style.color = "#0f0";
             }
-
             if (signalY > 600) {
-                signalY = -1200 - Math.random()*300; signalColor = "red"; signalTimer = 0;
+                signalY = -1500; signalColor = "red"; signalTimer = 0;
                 passedIntersections++;
-                if (passedIntersections === targetIntersections) {
-                    goalAreaY = -400; // 全交差点クリア直後にゴールを画面上に配置
-                }
+                initSpawnQueue();
+                if (passedIntersections === targetIntersections) goalAreaY = -400;
             }
 
-            // 通常走行時の衝突判定と信号無視判定
-            npcs.forEach(n => { n.y += speed*0.4 + n.s; if(!n.c && Math.abs(playerX-n.x)<45 && Math.abs(playerY-n.y)<50) { n.c=true; score-=5; } });
-            walkers.forEach(w => { w.x += 1.8; w.y += speed; if(!w.c && Math.abs(playerX-w.x)<50 && Math.abs(playerY-w.y)<60) { w.c=true; score-=10; } });
-            bonusItems.forEach(i => { i.y += speed; if(!i.c && Math.abs(playerX-i.x)<40 && Math.abs(playerY-i.y)<40) { i.c=true; score-=10; alert("Không dùng điện thoại/tai nghe!"); } });
+            npcs.forEach(n => { if(!n.c && Math.abs(playerX-n.x)<45 && Math.abs(playerY-n.y)<50) { n.c=true; score-=5; sounds.error(); } n.y += speed*0.4 + n.s; });
+            walkers.forEach(w => { if(!w.c && Math.abs(playerX-w.x)<50 && Math.abs(playerY-w.y)<60) { w.c=true; score-=10; sounds.error(); } w.x += 1.8; w.y += speed; });
+            bonusItems.forEach(i => { if(!i.c && Math.abs(playerX-i.x)<40 && Math.abs(playerY-i.y)<40) { i.c=true; score-=10; sounds.item(); alert("Không dùng điện thoại!"); } i.y += speed; });
             if (signalColor === "red" && (signalY+stopLineOffset) > playerY - 50 && (signalY+stopLineOffset) < playerY + 30 && speed > 0.4) {
-                gameOver("Bạn đã vượt đèn đỏ!");
+                sounds.error(); gameOver("Bạn đã vượt đèn đỏ!");
             }
         }
-
         document.getElementById('score-text').innerText = "Điểm: " + Math.floor(score);
-        document.getElementById('progress-text').innerText = `Ngã tư: ${Math.floor(Math.min(passedIntersections, targetIntersections))} / ${targetIntersections}`;
+        document.getElementById('progress-text').innerText = `Ngã tư: ${Math.min(passedIntersections, targetIntersections)} / ${targetIntersections}`;
         document.getElementById('speed-text').innerText = `${Math.floor(speed*7)} km/h`;
-        if (score <= 0) gameOver("Hết điểm an toàn!");
+        if (score <= 0) gameOver("Hết điểm!");
     }
 
     function gameOver(m) { gameState="over"; alert(m); location.reload(); }
-    function gameClear() { gameState="clear"; alert(`CHIẾN THẮNG!\nBạn đã đến ${destinationName} an toàn!\nĐiểm: ${Math.floor(score)}`); location.reload(); }
-    window.addEventListener('touchend', () => { keys['ArrowLeft']=false; keys['ArrowRight']=false; keys['Space']=false; keys['ArrowUp']=false; });
+    function gameClear() { gameState="clear"; alert(`CHIẾN THẮNG!\nBạn đã đến ${destinationName} an toàn!`); location.reload(); }
+    window.addEventListener('touchend', () => { Object.keys(keys).forEach(k => keys[k]=false); });
+    window.addEventListener('keydown', (e) => { keys[e.code] = true; });
+    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 </script>
 </body>
 </html>
