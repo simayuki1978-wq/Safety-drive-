@@ -1,452 +1,757 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Safety Driver Pro - Ultimate</title>
-
+<title>こうつうルールでゴールしよう！</title>
 <style>
-body { margin:0; background:#87CEEB; overflow:hidden; font-family:sans-serif; }
-canvas { display:block; margin:0 auto; background:#2ecc71; border:4px solid #333; }
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: #1a1a2e;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-height: 100vh;
+font-family: ‘Nunito’, sans-serif;
+overflow: hidden;
+}
 
 #ui {
-    position:absolute;
-    top:10px;
-    left:50%;
-    transform:translateX(-50%);
-    color:white;
-    text-align:center;
-    text-shadow:2px 2px 4px #000;
+position: absolute;
+top: 10px;
+left: 50%;
+transform: translateX(-50%);
+color: white;
+text-align: center;
+text-shadow: 2px 2px 4px #000;
+z-index: 10;
+pointer-events: none;
+}
+
+#score { font-size: 22px; font-weight: 900; color: #FFD700; }
+#speed { font-size: 16px; color: #aef; }
+#progress-bar-wrap {
+width: 300px;
+height: 14px;
+background: rgba(255,255,255,0.2);
+border-radius: 10px;
+margin: 4px auto;
+overflow: hidden;
+}
+#progress-bar {
+height: 100%;
+background: linear-gradient(90deg, #00e676, #76ff03);
+border-radius: 10px;
+transition: width 0.3s;
+width: 0%;
+}
+#progress-label { font-size: 12px; color: #cfc; }
+
+canvas {
+display: block;
+border: 4px solid #FFD700;
+border-radius: 8px;
+box-shadow: 0 0 30px #FFD70066;
 }
 
 #controls {
-    position:absolute;
-    bottom:10px;
-    left:50%;
-    transform:translateX(-50%);
-    width:400px;
-    display:flex;
-    justify-content:space-around;
+position: absolute;
+bottom: 10px;
+left: 50%;
+transform: translateX(-50%);
+width: 400px;
+display: flex;
+justify-content: space-around;
+z-index: 10;
 }
 
-button {
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    border:none;
-    font-weight:bold;
-    opacity:0.8;
+button.ctrl {
+width: 70px;
+height: 70px;
+border-radius: 50%;
+border: 3px solid #FFD700;
+background: rgba(0,0,0,0.5);
+color: #FFD700;
+font-size: 24px;
+font-weight: 900;
+cursor: pointer;
+user-select: none;
+touch-action: none;
+}
+
+/* Quiz overlay */
+#quiz-overlay {
+display: none;
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0,0,40,0.85);
+z-index: 20;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 16px;
+padding: 20px;
+}
+#quiz-overlay.active { display: flex; }
+
+#quiz-sign {
+font-size: 80px;
+animation: bounce 0.5s infinite alternate;
+}
+@keyframes bounce {
+from { transform: translateY(0); }
+to { transform: translateY(-10px); }
+}
+
+#quiz-question {
+font-size: 20px;
+color: white;
+font-weight: 900;
+text-align: center;
+text-shadow: 1px 1px 4px #000;
+max-width: 320px;
+}
+
+.quiz-btn {
+width: 300px;
+padding: 14px;
+border-radius: 12px;
+border: 3px solid #FFD700;
+background: rgba(255,215,0,0.15);
+color: #FFD700;
+font-family: ‘Nunito’, sans-serif;
+font-size: 17px;
+font-weight: 700;
+cursor: pointer;
+transition: background 0.2s, transform 0.1s;
+}
+.quiz-btn:hover { background: rgba(255,215,0,0.35); transform: scale(1.03); }
+.quiz-btn.correct { background: #00e67688; border-color: #00e676; color: white; }
+.quiz-btn.wrong { background: #ff174488; border-color: #ff1744; color: white; }
+
+/* Goal / Game over screen */
+#end-overlay {
+display: none;
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0,0,40,0.92);
+z-index: 30;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 18px;
+}
+#end-overlay.active { display: flex; }
+#end-title { font-size: 42px; font-weight: 900; color: #FFD700; text-align: center; }
+#end-msg { font-size: 18px; color: white; text-align: center; max-width: 300px; }
+#end-score { font-size: 28px; color: #00e676; font-weight: 900; }
+#restart-btn {
+padding: 14px 40px;
+border-radius: 30px;
+border: none;
+background: #FFD700;
+color: #1a1a2e;
+font-family: ‘Nunito’, sans-serif;
+font-size: 20px;
+font-weight: 900;
+cursor: pointer;
 }
 </style>
-</head>
 
+</head>
 <body>
 
 <div id="ui">
-    <div id="score">Score: 100</div>
-    <div id="speed">0 km/h</div>
-    <div id="notice"></div>
+  <div id="score">⭐ スコア: 100</div>
+  <div id="speed">0 km/h</div>
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  <div id="progress-label">🏫 学校まであと少し！</div>
 </div>
 
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 
 <div id="controls">
-    <button id="left">←</button>
-    <button id="right">→</button>
-    <button id="accel">▲</button>
-    <button id="brake">■</button>
+  <button class="ctrl" id="left">←</button>
+  <button class="ctrl" id="right">→</button>
+  <button class="ctrl" id="accel">▲</button>
+  <button class="ctrl" id="brake">■</button>
+</div>
+
+<!-- Quiz UI -->
+
+<div id="quiz-overlay">
+  <div id="quiz-sign"></div>
+  <div id="quiz-question"></div>
+  <div id="quiz-choices"></div>
+</div>
+
+<!-- Goal / Game over -->
+
+<div id="end-overlay">
+  <div id="end-title"></div>
+  <div id="end-msg"></div>
+  <div id="end-score"></div>
+  <button id="restart-btn" onclick="restartGame()">もういちど！</button>
 </div>
 
 <script>
+// ===== QUIZ DATA =====
+const QUIZZES = [
+  {
+    sign: "🔴",
+    question: "赤い丸の標識は何を意味する？",
+    choices: ["止まれ", "進め", "ゆっくり走れ", "追い越し禁止"],
+    answer: 0,
+    hint: "赤は「止まれ」のサイン！"
+  },
+  {
+    sign: "🚸",
+    question: "この標識がある場所では？",
+    choices: ["スピードアップ", "子どもに注意してゆっくり走る", "クラクションを鳴らす", "追い越しOK"],
+    answer: 1,
+    hint: "子どもが飛び出すかも！ゆっくりね。"
+  },
+  {
+    sign: "🚑",
+    question: "救急車が来たらどうする？",
+    choices: ["一緒に走る", "追い越す", "道の左に寄って止まる", "クラクションを鳴らす"],
+    answer: 2,
+    hint: "緊急車両には道を譲ろう！"
+  },
+  {
+    sign: "⛔",
+    question: "この標識がある道は？",
+    choices: ["自転車だけ通れる", "車も自転車も通行禁止", "歩行者専用", "駐車禁止"],
+    answer: 1,
+    hint: "通行禁止！進入してはいけないよ。"
+  },
+  {
+    sign: "🚦",
+    question: "信号が黄色になったらどうする？",
+    choices: ["急いで渡る", "スピードアップ", "止まれる場合は止まる", "無視する"],
+    answer: 2,
+    hint: "黄色は「注意」。止まれるなら止まろう！"
+  },
+  {
+    sign: "🛑",
+    question: "一時停止の標識を見たらどうする？",
+    choices: ["ゆっくり通る", "必ず止まって左右を確認", "止まらなくていい", "クラクションだけ鳴らす"],
+    answer: 1,
+    hint: "一時停止は必ず止まること！"
+  },
+  {
+    sign: "🚶",
+    question: "横断歩道に歩行者がいたら？",
+    choices: ["先に通る", "クラクションで追い払う", "止まって歩行者を先に通す", "スピードアップして避ける"],
+    answer: 2,
+    hint: "歩行者が優先！必ず止まって待とう。"
+  },
+  {
+    sign: "⚡",
+    question: "スクールゾーンでの最高速度は？",
+    choices: ["60km/h", "40km/h", "30km/h", "制限なし"],
+    answer: 2,
+    hint: "スクールゾーンは30km/h以下！"
+  }
+];
+
 // ===== INPUT =====
 class InputManager {
-    constructor() {
-        this.keys = {};
-        this.bind();
-    }
-
-    bind() {
-        window.addEventListener('keydown', e => this.keys[e.code] = true);
-        window.addEventListener('keyup', e => this.keys[e.code] = false);
-
-        const map = {
-            left: 'ArrowLeft',
-            right: 'ArrowRight',
-            accel: 'ArrowUp',
-            brake: 'Space'
-        };
-
-        Object.entries(map).forEach(([id, key]) => {
-            const el = document.getElementById(id);
-
-            el.addEventListener('touchstart', () => this.keys[key] = true);
-            el.addEventListener('touchend', () => this.keys[key] = false);
-
-            el.addEventListener('mousedown', () => this.keys[key] = true);
-            el.addEventListener('mouseup', () => this.keys[key] = false);
-        });
-    }
+  constructor() {
+    this.keys = {};
+    this.bind();
+  }
+  bind() {
+    window.addEventListener('keydown', e => this.keys[e.code] = true);
+    window.addEventListener('keyup', e => this.keys[e.code] = false);
+    const map = { left:'ArrowLeft', right:'ArrowRight', accel:'ArrowUp', brake:'Space' };
+    Object.entries(map).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      el.addEventListener('touchstart', e => { e.preventDefault(); this.keys[key] = true; });
+      el.addEventListener('touchend', e => { e.preventDefault(); this.keys[key] = false; });
+      el.addEventListener('mousedown', () => this.keys[key] = true);
+      el.addEventListener('mouseup', () => this.keys[key] = false);
+    });
+  }
 }
 
 // ===== AUDIO =====
 class AudioManager {
-    constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.lastNote = 0;
-        this.melody = [261,293,329,349,392,329,261,392];
+  constructor() {
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    this.lastNote = 0;
+    this.melody = [261,293,329,349,392,329,261,392];
+  }
+  unlock() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
+  play(freq, duration=0.2, vol=0.1) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.value = vol;
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  }
+  playSiren() { this.play(800,0.1,0.1); setTimeout(()=>this.play(1000,0.1,0.1),100); }
+  playCorrect() { [523,659,784].forEach((f,i) => setTimeout(()=>this.play(f,0.15,0.12),i*100)); }
+  playWrong() { this.play(150,0.4,0.2); }
+  playGoal() { [523,659,784,1047].forEach((f,i) => setTimeout(()=>this.play(f,0.3,0.15),i*150)); }
+  updateBGM() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (now - this.lastNote > 0.4) {
+      const i = Math.floor(now / 0.4) % this.melody.length;
+      this.play(this.melody[i], 0.25, 0.04);
+      this.lastNote = now;
     }
-
-    unlock() {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-    }
-
-    play(freq, duration=0.2, vol=0.1) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.frequency.value = freq;
-        gain.gain.value = vol;
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
-    }
-
-    playSiren() {
-        this.play(800,0.1,0.1);
-        setTimeout(()=>this.play(1000,0.1,0.1),100);
-    }
-
-    updateBGM() {
-        const now = this.ctx.currentTime;
-        if (now - this.lastNote > 0.4) {
-            const i = Math.floor(now / 0.4) % this.melody.length;
-            this.play(this.melody[i],0.25,0.05);
-            this.lastNote = now;
-        }
-    }
+  }
 }
 
 // ===== TRAFFIC LIGHT =====
 class TrafficLight {
-    constructor(y) {
-        this.y = y;
-        this.state = "red";
-        this.timer = 0;
-        this.stopLineOffset = 130;
+  constructor(y) {
+    this.y = y;
+    this.state = "red";
+    this.timer = 0;
+    this.stopLineOffset = 130;
+  }
+  update(speed) {
+    this.y += speed;
+    this.timer++;
+    if (this.state === "red" && this.timer > 280) { this.state = "green"; this.timer = 0; }
+    else if (this.state === "green" && this.timer > 200) { this.state = "red"; this.timer = 0; }
+  }
+  draw(ctx) {
+    ctx.fillStyle = "#222";
+    ctx.fillRect(340, this.y, 30, 80);
+    ctx.fillStyle = this.state === "red" ? "red" : "#444";
+    ctx.beginPath(); ctx.arc(355, this.y+20, 10, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = this.state === "green" ? "#0f0" : "#444";
+    ctx.beginPath(); ctx.arc(355, this.y+60, 10, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.moveTo(0, this.y + this.stopLineOffset); ctx.lineTo(400, this.y + this.stopLineOffset); ctx.stroke();
+  }
+  isViolation(playerY, speed) {
+    const lineY = this.y + this.stopLineOffset;
+    return this.state === "red" && lineY > playerY - 50 && lineY < playerY + 30 && speed > 0.5;
+  }
+  isPassed() { return this.y > 650; }
+  reset(y) { this.y = y; this.state = "red"; this.timer = 0; }
+}
+
+// ===== SIGN QUIZ =====
+class SignQuiz {
+  constructor(y, quizIndex) {
+    this.y = y;
+    this.x = 60;
+    this.quiz = QUIZZES[quizIndex % QUIZZES.length];
+    this.active = false;
+    this.passed = false;
+    this.triggered = false;
+  }
+  update(speed) { this.y += speed; }
+  draw(ctx) {
+    if (this.passed || this.triggered) return;
+    ctx.save();
+    ctx.font = "36px serif";
+    ctx.fillText(this.quiz.sign, this.x - 18, this.y);
+    ctx.strokeStyle = "#FFD700";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(this.x - 22, this.y - 36, 44, 44);
+    ctx.restore();
+  }
+  shouldTrigger(playerY) {
+    return !this.triggered && Math.abs(this.y - playerY) < 80;
+  }
+  isOffScreen() { return this.y > 700; }
+}
+
+// ===== SCHOOL GOAL =====
+class SchoolGoal {
+  constructor(distanceTotal) {
+    this.distanceTotal = distanceTotal;
+    this.reached = false;
+  }
+  draw(ctx, progress) {
+    // Draw school building in the distance (shrinks as you approach)
+    const scale = 0.4 + progress * 0.6;
+    const yPos = 60 - progress * 20;
+    ctx.save();
+    ctx.globalAlpha = 0.7 + progress * 0.3;
+    ctx.font = `${Math.floor(40 * scale)}px serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("🏫", 200, yPos + 40 * scale);
+    if (progress > 0.5) {
+      ctx.font = "bold 16px 'Nunito', sans-serif";
+      ctx.fillStyle = "#FFD700";
+      ctx.fillText("🎉 もうすぐゴール！", 200, yPos + 40 * scale + 30);
     }
-
-    update(speed) {
-        this.y += speed;
-        this.timer++;
-
-        if (this.state === "red" && this.timer > 300) {
-            this.state = "green";
-            this.timer = 0;
-        } else if (this.state === "green" && this.timer > 200) {
-            this.state = "red";
-            this.timer = 0;
-        }
-    }
-
-    draw(ctx) {
-        ctx.fillStyle = "#222";
-        ctx.fillRect(340, this.y, 30, 80);
-
-        ctx.fillStyle = this.state === "red" ? "red" : "#444";
-        ctx.beginPath();
-        ctx.arc(355, this.y+20, 10, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.fillStyle = this.state === "green" ? "#0f0" : "#444";
-        ctx.beginPath();
-        ctx.arc(355, this.y+60, 10, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.moveTo(0, this.y + this.stopLineOffset);
-        ctx.lineTo(400, this.y + this.stopLineOffset);
-        ctx.stroke();
-    }
-
-    isViolation(playerY, speed) {
-        const lineY = this.y + this.stopLineOffset;
-        return (
-            this.state === "red" &&
-            lineY > playerY - 50 &&
-            lineY < playerY + 30 &&
-            speed > 0.5
-        );
-    }
-
-    isPassed() {
-        return this.y > 600;
-    }
-
-    reset(y) {
-        this.y = y;
-        this.state = "red";
-        this.timer = 0;
-    }
+    ctx.restore();
+  }
 }
 
 // ===== GAME =====
 class Game {
-    constructor(canvas) {
-        this.ctx = canvas.getContext('2d');
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.reset();
+    this.input = new InputManager();
+    this.audio = new AudioManager();
+  }
 
-        this.player = { x:200, y:500 };
-        this.speed = 0;
-        this.score = 100;
-        this.offset = 0;
+  reset() {
+    this.player = { x: 200, y: 500 };
+    this.speed = 0;
+    this.score = 100;
+    this.offset = 0;
 
-        this.npcs = [];
-        this.spawnTimer = 0;
+    // Progress: 0 → 1 = goal
+    this.distance = 0;
+    this.goalDistance = 3000;
 
-        this.notice = "";
-        this.noticeTimer = 0;
+    this.npcs = [];
+    this.spawnTimer = 0;
 
-        this.input = new InputManager();
-        this.audio = new AudioManager();
-        this.light = new TrafficLight(-1200);
+    this.notice = "";
+    this.noticeTimer = 0;
+    this.noticeColor = "yellow";
 
-        // crash
-        this.crashed = false;
-        this.crashTimer = 0;
-        this.shakePower = 0;
-        this.particles = [];
+    this.light = new TrafficLight(-800);
 
-        // ambulance
-        this.ambulance = null;
+    this.crashed = false;
+    this.crashTimer = 0;
+    this.shakePower = 0;
+    this.particles = [];
 
-        this.loop = this.loop.bind(this);
+    this.ambulance = null;
+
+    // Quiz
+    this.signs = [];
+    this.signTimer = 0;
+    this.signCount = 0;
+    this.quizActive = false;
+    this.pendingQuiz = null;
+
+    // Goal
+    this.goal = new SchoolGoal(this.goalDistance);
+    this.goalReached = false;
+    this.gameOver = false;
+
+    document.getElementById('quiz-overlay').classList.remove('active');
+    document.getElementById('end-overlay').classList.remove('active');
+  }
+
+  start() {
+    document.addEventListener('click', () => this.audio.unlock(), { once: true });
+    if (!this._looping) {
+      this._looping = true;
+      this._loop();
+    }
+  }
+
+  _loop() {
+    this.update();
+    this.render();
+    requestAnimationFrame(() => this._loop());
+  }
+
+  spawnNPC() {
+    this.spawnTimer++;
+    if (this.spawnTimer > 70) {
+      this.npcs.push({ x: 110 + Math.random() * 180, y: -80, baseSpeed: 1 + Math.random() * 2, currentSpeed: 0 });
+      this.spawnTimer = 0;
+    }
+  }
+
+  spawnSign() {
+    this.signTimer++;
+    const interval = Math.max(200, 400 - this.signCount * 10);
+    if (this.signTimer > interval && this.distance < this.goalDistance * 0.92) {
+      this.signs.push(new SignQuiz(-150, this.signCount));
+      this.signCount++;
+      this.signTimer = 0;
+    }
+  }
+
+  spawnAmbulance() {
+    if (this.ambulance || Math.random() > 0.002) return;
+    this.ambulance = { x: this.player.x, y: this.player.y + 200, speed: 6 };
+    this.showNotice("🚑 救急車！道を譲れ！", "#FF6B6B");
+  }
+
+  triggerCrash(npc) {
+    this.crashed = true;
+    this.crashTimer = 100;
+    this.speed = 0;
+    this.score = Math.max(0, this.score - 30);
+    this.audio.play(80, 0.5, 0.3);
+    this.showNotice("💥 ぶつかった！-30点", "#FF6B6B");
+    this.shakePower = 10;
+    for (let i = 0; i < 15; i++) {
+      this.particles.push({ x: this.player.x, y: this.player.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 30 });
+    }
+    if (npc) npc.currentSpeed = 0;
+  }
+
+  showNotice(msg, color = "yellow") {
+    this.notice = msg;
+    this.noticeTimer = 90;
+    this.noticeColor = color;
+  }
+
+  openQuiz(sign) {
+    this.quizActive = true;
+    this.pendingSign = sign;
+    sign.triggered = true;
+    this.speed = 0;
+
+    const q = sign.quiz;
+    document.getElementById('quiz-sign').textContent = q.sign;
+    document.getElementById('quiz-question').textContent = q.question;
+
+    const choicesEl = document.getElementById('quiz-choices');
+    choicesEl.innerHTML = '';
+    q.choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-btn';
+      btn.textContent = c;
+      btn.onclick = () => this.answerQuiz(i, btn, q);
+      choicesEl.appendChild(btn);
+    });
+
+    document.getElementById('quiz-overlay').classList.add('active');
+  }
+
+  answerQuiz(index, btn, q) {
+    const btns = document.querySelectorAll('.quiz-btn');
+    btns.forEach(b => b.onclick = null);
+
+    if (index === q.answer) {
+      btn.classList.add('correct');
+      this.score += 20;
+      this.audio.playCorrect();
+      this.showNotice("⭐ 正解！+20点 " + q.hint, "#00e676");
+    } else {
+      btn.classList.add('wrong');
+      btns[q.answer].classList.add('correct');
+      this.score = Math.max(0, this.score - 10);
+      this.audio.playWrong();
+      this.showNotice("❌ 不正解！-10点 " + q.hint, "#FF6B6B");
     }
 
-    start() {
-        document.addEventListener('click', () => this.audio.unlock(), { once:true });
-        requestAnimationFrame(this.loop);
+    setTimeout(() => {
+      document.getElementById('quiz-overlay').classList.remove('active');
+      this.quizActive = false;
+      this.pendingSign.passed = true;
+    }, 1500);
+  }
+
+  showGoal() {
+    this.goalReached = true;
+    this.audio.playGoal();
+    const el = document.getElementById('end-overlay');
+    document.getElementById('end-title').textContent = "🏫 ゴール！";
+    document.getElementById('end-msg').textContent = "学校に無事に到着したよ！交通ルールをしっかり守れたね！";
+    document.getElementById('end-score').textContent = "最終スコア: " + this.score + "点";
+    el.classList.add('active');
+  }
+
+  update() {
+    if (this.goalReached || this.quizActive) return;
+
+    const keys = this.input.keys;
+
+    if (this.crashed) {
+      this.crashTimer--;
+      if (this.crashTimer <= 0) this.crashed = false;
     }
 
-    spawnNPC() {
-        this.spawnTimer++;
-        if (this.spawnTimer > 60) {
-            this.npcs.push({
-                x:100 + Math.random()*200,
-                y:-100,
-                baseSpeed:1 + Math.random()*2,
-                currentSpeed:0
-            });
-            this.spawnTimer = 0;
-        }
+    if (!this.crashed) {
+      if (keys['ArrowUp']) this.speed += 0.2;
+      else if (keys['Space']) this.speed -= 0.4;
+      else this.speed *= 0.98;
     }
 
-    spawnAmbulance() {
-        if (this.ambulance || Math.random() > 0.002) return;
+    this.speed = Math.max(0, Math.min(this.speed, 8));
 
-        this.ambulance = {
-            x: this.player.x,
-            y: this.player.y + 200,
-            speed: 6
-        };
+    if (keys['ArrowLeft']) this.player.x = Math.max(20, this.player.x - 4);
+    if (keys['ArrowRight']) this.player.x = Math.min(380, this.player.x + 4);
 
-        this.showNotice("🚑 Give Way!");
+    this.offset += this.speed;
+    this.distance += this.speed;
+
+    // Check goal
+    if (this.distance >= this.goalDistance && !this.goalReached) {
+      this.showGoal();
+      return;
     }
 
-    triggerCrash(npc) {
-        this.crashed = true;
-        this.crashTimer = 120;
-        this.speed = 0;
-        this.score = Math.max(0, this.score - 30);
-        this.audio.play(80,0.5,0.3);
-        this.showNotice("💥 ACCIDENT!");
-        this.shakePower = 10;
+    this.spawnNPC();
+    this.spawnSign();
+    this.spawnAmbulance();
 
-        for (let i=0;i<15;i++) {
-            this.particles.push({
-                x:this.player.x,
-                y:this.player.y,
-                vx:(Math.random()-0.5)*5,
-                vy:(Math.random()-0.5)*5,
-                life:30
-            });
-        }
+    const lightLine = this.light.y + this.light.stopLineOffset;
 
-        npc.currentSpeed = 0;
+    this.npcs.forEach((n, i) => {
+      const approaching = n.y < lightLine - 20 && n.y > lightLine - 120;
+      if (this.light.state === "red" && approaching) n.currentSpeed *= 0.9;
+      else n.currentSpeed += (n.baseSpeed - n.currentSpeed) * 0.05;
+
+      const front = this.npcs[i - 1];
+      if (front && Math.abs(n.y - front.y) < 60) n.currentSpeed = Math.min(n.currentSpeed, front.currentSpeed);
+
+      n.y += n.currentSpeed + this.speed * 0.5;
+
+      if (!this.crashed && Math.abs(this.player.x - n.x) < 40 && Math.abs(this.player.y - n.y) < 50) {
+        this.triggerCrash(n);
+      }
+    });
+
+    this.npcs = this.npcs.filter(n => n.y < 700);
+
+    // Traffic light
+    this.light.update(this.speed);
+    if (this.light.isViolation(this.player.y, this.speed)) {
+      this.speed = 0;
+      this.showNotice("🔴 赤信号！止まれ！", "#FF6B6B");
+      this.audio.play(120, 0.3, 0.2);
+    }
+    if (this.light.isPassed()) this.light.reset(-1200);
+
+    // Signs
+    this.signs.forEach(s => {
+      s.update(this.speed);
+      if (s.shouldTrigger(this.player.y)) {
+        this.openQuiz(s);
+      }
+    });
+    this.signs = this.signs.filter(s => !s.isOffScreen() || !s.passed);
+
+    // Ambulance
+    if (this.ambulance) {
+      const a = this.ambulance;
+      a.y -= a.speed;
+      if (Math.random() < 0.05) this.audio.playSiren();
+      const givingWay = this.player.x < 110 || this.player.x > 290;
+      if (!givingWay && Math.abs(this.player.y - a.y) < 80) {
+        this.score = Math.max(0, this.score - 20);
+        this.showNotice("❗ 道を譲れ！-20点", "#FF6B6B");
+      }
+      if (a.y < -100) this.ambulance = null;
     }
 
-    showNotice(msg) {
-        this.notice = msg;
-        this.noticeTimer = 60;
+    // Particles
+    this.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
+    this.particles = this.particles.filter(p => p.life > 0);
+
+    if (this.noticeTimer > 0) this.noticeTimer--;
+    if (this.shakePower > 0) this.shakePower *= 0.85;
+
+    this.audio.updateBGM();
+  }
+
+  render() {
+    const ctx = this.ctx;
+    const shakeX = (Math.random() - 0.5) * this.shakePower;
+    const shakeY = (Math.random() - 0.5) * this.shakePower;
+
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    // Sky/ground
+    ctx.fillStyle = "#87CEEB";
+    ctx.fillRect(0, 0, 400, 80);
+    ctx.fillStyle = "#4CAF50";
+    ctx.fillRect(0, 80, 400, 520);
+
+    // Road
+    ctx.fillStyle = "#546E7A";
+    ctx.beginPath();
+    ctx.moveTo(80, 80);
+    ctx.lineTo(320, 80);
+    ctx.lineTo(400, 600);
+    ctx.lineTo(0, 600);
+    ctx.fill();
+
+    // Lane markings
+    ctx.strokeStyle = "#fff";
+    ctx.setLineDash([30, 40]);
+    ctx.lineDashOffset = -this.offset;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(200, 80);
+    ctx.lineTo(200, 600);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Goal school (draws in perspective at top)
+    const progress = Math.min(1, this.distance / this.goalDistance);
+    this.goal.draw(ctx, progress);
+
+    // Traffic light
+    this.light.draw(ctx);
+
+    // Signs
+    this.signs.forEach(s => s.draw(ctx));
+
+    // NPCs
+    ctx.font = "38px serif";
+    this.npcs.forEach(n => ctx.fillText("🚗", n.x - 19, n.y));
+
+    // Ambulance
+    if (this.ambulance) {
+      ctx.font = "48px serif";
+      ctx.fillText("🚑", this.ambulance.x - 24, this.ambulance.y);
     }
 
-    update() {
-        if (this.crashed) {
-            this.crashTimer--;
-            if (this.crashTimer <= 0) this.crashed = false;
-        }
+    // Player
+    ctx.font = "46px serif";
+    ctx.fillText("🚲", this.player.x - 23, this.player.y);
 
-        const keys = this.input.keys;
+    // Particles
+    this.particles.forEach(p => {
+      ctx.fillStyle = "orange";
+      ctx.fillRect(p.x, p.y, 4, 4);
+    });
 
-        if (!this.crashed) {
-            if (keys['ArrowUp']) this.speed += 0.2;
-            else if (keys['Space']) this.speed -= 0.4;
-            else this.speed *= 0.98;
-        }
+    ctx.restore();
 
-        this.speed = Math.max(0, Math.min(this.speed, 8));
-
-        if (keys['ArrowLeft']) this.player.x -= 4;
-        if (keys['ArrowRight']) this.player.x += 4;
-
-        this.offset += this.speed;
-
-        this.spawnNPC();
-        this.spawnAmbulance();
-
-        const lightLine = this.light.y + this.light.stopLineOffset;
-
-        this.npcs.forEach((n,i) => {
-            const approaching = n.y < lightLine - 20 && n.y > lightLine - 120;
-
-            if (this.light.state === "red" && approaching) {
-                n.currentSpeed *= 0.9;
-            } else {
-                n.currentSpeed += (n.baseSpeed - n.currentSpeed) * 0.05;
-            }
-
-            // 車間距離
-            const front = this.npcs[i-1];
-            if (front && Math.abs(n.y - front.y) < 60) {
-                n.currentSpeed = Math.min(n.currentSpeed, front.currentSpeed);
-            }
-
-            n.y += n.currentSpeed + this.speed*0.5;
-
-            if (!this.crashed &&
-                Math.abs(this.player.x - n.x) < 40 &&
-                Math.abs(this.player.y - n.y) < 50) {
-                this.triggerCrash(n);
-            }
-        });
-
-        this.npcs = this.npcs.filter(n => n.y < 700);
-
-        // traffic light
-        this.light.update(this.speed);
-
-        if (this.light.isViolation(this.player.y, this.speed)) {
-            this.speed = 0;
-            this.showNotice("STOP! Red Light!");
-            this.audio.play(120,0.3,0.2);
-        }
-
-        if (this.light.isPassed()) this.light.reset(-1500);
-
-        // ambulance
-        if (this.ambulance) {
-            const a = this.ambulance;
-            a.y -= a.speed;
-
-            if (Math.random() < 0.05) this.audio.playSiren();
-
-            const givingWay = this.player.x < 120 || this.player.x > 280;
-
-            if (!givingWay &&
-                Math.abs(this.player.y - a.y) < 80) {
-                this.score = Math.max(0, this.score - 20);
-                this.showNotice("❗ Give Way!");
-            }
-
-            if (a.y < -100) this.ambulance = null;
-        }
-
-        // particles
-        this.particles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life--;
-        });
-        this.particles = this.particles.filter(p => p.life > 0);
-
-        if (this.noticeTimer > 0) this.noticeTimer--;
-
-        if (this.shakePower > 0) this.shakePower *= 0.9;
-
-        this.audio.updateBGM();
+    // Notice
+    if (this.noticeTimer > 0) {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "bold 18px 'Nunito', sans-serif";
+      ctx.fillStyle = this.noticeColor;
+      ctx.shadowColor = "#000";
+      ctx.shadowBlur = 6;
+      ctx.fillText(this.notice, 200, 120);
+      ctx.restore();
     }
 
-    render() {
-        const ctx = this.ctx;
-
-        let shakeX = (Math.random()-0.5)*this.shakePower;
-        let shakeY = (Math.random()-0.5)*this.shakePower;
-
-        ctx.save();
-        ctx.translate(shakeX, shakeY);
-
-        ctx.fillStyle = "#2ecc71";
-        ctx.fillRect(0,0,400,600);
-
-        ctx.fillStyle = "#34495e";
-        ctx.beginPath();
-        ctx.moveTo(100,0);
-        ctx.lineTo(300,0);
-        ctx.lineTo(400,600);
-        ctx.lineTo(0,600);
-        ctx.fill();
-
-        ctx.strokeStyle = "#fff";
-        ctx.setLineDash([30,40]);
-        ctx.lineDashOffset = -this.offset;
-        ctx.beginPath();
-        ctx.moveTo(200,0);
-        ctx.lineTo(200,600);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        this.light.draw(ctx);
-
-        ctx.font = "40px serif";
-        this.npcs.forEach(n => ctx.fillText("🚗", n.x, n.y));
-
-        if (this.ambulance) {
-            ctx.font = "50px serif";
-            ctx.fillText("🚑", this.ambulance.x, this.ambulance.y);
-        }
-
-        ctx.font = "50px serif";
-        ctx.fillText("🏍️", this.player.x, this.player.y);
-
-        this.particles.forEach(p => {
-            ctx.fillStyle = "orange";
-            ctx.fillRect(p.x, p.y, 4, 4);
-        });
-
-        ctx.restore();
-
-        if (this.noticeTimer > 0) {
-            ctx.fillStyle = "yellow";
-            ctx.font = "20px sans-serif";
-            ctx.fillText(this.notice, 200, 100);
-        }
-
-        document.getElementById("score").innerText = "Score: " + this.score;
-        document.getElementById("speed").innerText = Math.floor(this.speed*10) + " km/h";
-    }
-
-    loop() {
-        this.update();
-        this.render();
-        requestAnimationFrame(this.loop);
-    }
+    // HUD
+    document.getElementById('score').textContent = "⭐ スコア: " + this.score;
+    document.getElementById('speed').textContent = Math.floor(this.speed * 10) + " km/h";
+    const pct = Math.min(100, Math.floor((this.distance / this.goalDistance) * 100));
+    document.getElementById('progress-bar').style.width = pct + "%";
+    document.getElementById('progress-label').textContent = `🏫 ゴールまで ${100 - pct}%`;
+  }
 }
 
 // ===== START =====
-const game = new Game(document.getElementById("gameCanvas"));
+let game;
+function restartGame() {
+  game.reset();
+}
+
+game = new Game(document.getElementById('gameCanvas'));
 game.start();
 </script>
 
