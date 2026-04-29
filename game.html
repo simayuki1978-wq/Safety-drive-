@@ -1,56 +1,47 @@
 <!DOCTYPE html>
 
-<html lang="ja">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>こうつうルールでゴールしよう！</title>
+<title>Học Luật Giao Thông - Đến Trường Nào!</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+  }
 
-- { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-background: #1a1a2e;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-min-height: 100vh;
-font-family: ‘Nunito’, sans-serif;
-overflow: hidden;
-}
-
+/* ── HUD ── */
 #ui {
 position: absolute;
-top: 10px;
-left: 50%;
+top: 8px; left: 50%;
 transform: translateX(-50%);
-color: white;
-text-align: center;
+color: white; text-align: center;
 text-shadow: 2px 2px 4px #000;
-z-index: 10;
-pointer-events: none;
+z-index: 10; pointer-events: none; width: 400px;
 }
-
-#score { font-size: 22px; font-weight: 900; color: #FFD700; }
-#speed { font-size: 16px; color: #aef; }
+#score        { font-size: 20px; font-weight: 900; color: #FFD700; }
+#items-hud    { font-size: 22px; letter-spacing: 6px; }
+#speed        { font-size: 14px; color: #aef; }
 #progress-bar-wrap {
-width: 300px;
-height: 14px;
+width: 280px; height: 12px;
 background: rgba(255,255,255,0.2);
-border-radius: 10px;
-margin: 4px auto;
-overflow: hidden;
+border-radius: 10px; margin: 4px auto; overflow: hidden;
 }
 #progress-bar {
 height: 100%;
-background: linear-gradient(90deg, #00e676, #76ff03);
-border-radius: 10px;
-transition: width 0.3s;
-width: 0%;
+background: linear-gradient(90deg,#00e676,#76ff03);
+border-radius: 10px; transition: width 0.3s; width: 0%;
 }
-#progress-label { font-size: 12px; color: #cfc; }
+#progress-label { font-size: 11px; color: #cfc; }
 
 canvas {
 display: block;
@@ -59,127 +50,139 @@ border-radius: 8px;
 box-shadow: 0 0 30px #FFD70066;
 }
 
+/* ── Controls: left & right only ── */
 #controls {
-position: absolute;
-bottom: 10px;
-left: 50%;
+position: absolute; bottom: 14px; left: 50%;
 transform: translateX(-50%);
-width: 400px;
-display: flex;
-justify-content: space-around;
-z-index: 10;
+width: 260px; display: flex; justify-content: space-between; z-index: 10;
 }
-
 button.ctrl {
-width: 70px;
-height: 70px;
-border-radius: 50%;
-border: 3px solid #FFD700;
-background: rgba(0,0,0,0.5);
-color: #FFD700;
-font-size: 24px;
-font-weight: 900;
-cursor: pointer;
-user-select: none;
-touch-action: none;
+width: 80px; height: 80px; border-radius: 50%;
+border: 3px solid #FFD700; background: rgba(0,0,0,0.55);
+color: #FFD700; font-size: 30px; font-weight: 900;
+cursor: pointer; user-select: none; touch-action: none;
 }
 
-/* Quiz overlay */
+/* ── Item collection screen ── */
+#item-screen {
+display: flex; position: absolute;
+top:0; left:0; right:0; bottom:0;
+background: rgba(0,0,40,0.95);
+z-index: 40;
+flex-direction: column; align-items: center; justify-content: center;
+gap: 22px; padding: 24px;
+}
+#item-screen h2 { color:#FFD700; font-size:24px; text-align:center; line-height:1.4; }
+#item-screen p  { color:#cfc; font-size:14px; text-align:center; max-width:300px; }
+.item-row { display:flex; gap:28px; align-items:center; justify-content:center; }
+.item-box {
+display:flex; flex-direction:column; align-items:center; gap:8px;
+background: rgba(255,215,0,0.1);
+border: 3px solid #FFD700; border-radius:16px;
+padding: 18px 22px; cursor:pointer; min-width:110px;
+transition: background 0.2s, transform 0.15s;
+}
+.item-box:hover { background:rgba(255,215,0,0.28); transform:scale(1.06); }
+.item-box.got   { background:#00e67633; border-color:#00e676; pointer-events:none; }
+.item-box .icon  { font-size:52px; }
+.item-box .label { color:#FFD700; font-size:14px; font-weight:700; text-align:center; }
+.item-box.got .label { color:#00e676; }
+#start-btn {
+padding:14px 44px; border-radius:30px; border:none;
+background:#FFD700; color:#1a1a2e;
+font-family:‘Nunito’,sans-serif; font-size:20px; font-weight:900;
+cursor:pointer; opacity:0.35; pointer-events:none;
+transition: opacity 0.35s, transform 0.15s;
+}
+#start-btn.ready { opacity:1; pointer-events:auto; }
+#start-btn.ready:hover { transform:scale(1.05); }
+
+/* ── Quiz overlay ── */
 #quiz-overlay {
-display: none;
-position: absolute;
-top: 0; left: 0; right: 0; bottom: 0;
-background: rgba(0,0,40,0.85);
-z-index: 20;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 16px;
-padding: 20px;
+display:none; position:absolute;
+top:0; left:0; right:0; bottom:0;
+background:rgba(0,0,40,0.87);
+z-index:20; flex-direction:column;
+align-items:center; justify-content:center;
+gap:14px; padding:20px;
 }
-#quiz-overlay.active { display: flex; }
-
-#quiz-sign {
-font-size: 80px;
-animation: bounce 0.5s infinite alternate;
-}
+#quiz-overlay.active { display:flex; }
+#quiz-sign { font-size:76px; animation:bounce 0.5s infinite alternate; }
 @keyframes bounce {
-from { transform: translateY(0); }
-to { transform: translateY(-10px); }
+from { transform:translateY(0); } to { transform:translateY(-10px); }
 }
-
 #quiz-question {
-font-size: 20px;
-color: white;
-font-weight: 900;
-text-align: center;
-text-shadow: 1px 1px 4px #000;
-max-width: 320px;
+font-size:19px; color:white; font-weight:900;
+text-align:center; text-shadow:1px 1px 4px #000; max-width:320px;
 }
-
 .quiz-btn {
-width: 300px;
-padding: 14px;
-border-radius: 12px;
-border: 3px solid #FFD700;
-background: rgba(255,215,0,0.15);
-color: #FFD700;
-font-family: ‘Nunito’, sans-serif;
-font-size: 17px;
-font-weight: 700;
-cursor: pointer;
-transition: background 0.2s, transform 0.1s;
+width:300px; padding:13px; border-radius:12px;
+border:3px solid #FFD700; background:rgba(255,215,0,0.15);
+color:#FFD700; font-family:‘Nunito’,sans-serif;
+font-size:16px; font-weight:700; cursor:pointer;
+transition:background 0.2s, transform 0.1s;
 }
-.quiz-btn:hover { background: rgba(255,215,0,0.35); transform: scale(1.03); }
-.quiz-btn.correct { background: #00e67688; border-color: #00e676; color: white; }
-.quiz-btn.wrong { background: #ff174488; border-color: #ff1744; color: white; }
+.quiz-btn:hover { background:rgba(255,215,0,0.35); transform:scale(1.03); }
+.quiz-btn.correct { background:#00e67688; border-color:#00e676; color:white; }
+.quiz-btn.wrong   { background:#ff174488; border-color:#ff1744; color:white; }
 
-/* Goal / Game over screen */
+/* ── End screen ── */
 #end-overlay {
-display: none;
-position: absolute;
-top: 0; left: 0; right: 0; bottom: 0;
-background: rgba(0,0,40,0.92);
-z-index: 30;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 18px;
+display:none; position:absolute;
+top:0; left:0; right:0; bottom:0;
+background:rgba(0,0,40,0.93);
+z-index:30; flex-direction:column;
+align-items:center; justify-content:center; gap:18px;
 }
-#end-overlay.active { display: flex; }
-#end-title { font-size: 42px; font-weight: 900; color: #FFD700; text-align: center; }
-#end-msg { font-size: 18px; color: white; text-align: center; max-width: 300px; }
-#end-score { font-size: 28px; color: #00e676; font-weight: 900; }
+#end-overlay.active { display:flex; }
+#end-title { font-size:40px; font-weight:900; color:#FFD700; text-align:center; }
+#end-msg   { font-size:17px; color:white; text-align:center; max-width:300px; }
+#end-score { font-size:26px; color:#00e676; font-weight:900; }
 #restart-btn {
-padding: 14px 40px;
-border-radius: 30px;
-border: none;
-background: #FFD700;
-color: #1a1a2e;
-font-family: ‘Nunito’, sans-serif;
-font-size: 20px;
-font-weight: 900;
-cursor: pointer;
+padding:14px 40px; border-radius:30px; border:none;
+background:#FFD700; color:#1a1a2e;
+font-family:‘Nunito’,sans-serif; font-size:20px; font-weight:900; cursor:pointer;
 }
 </style>
 
 </head>
 <body>
 
+<!-- HUD -->
+
 <div id="ui">
-  <div id="score">⭐ スコア: 100</div>
+  <div id="score">⭐ Điểm: 100</div>
+  <div id="items-hud"></div>
   <div id="speed">0 km/h</div>
   <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
-  <div id="progress-label">🏫 学校まであと少し！</div>
+  <div id="progress-label">🏫 Hãy bắt đầu!</div>
 </div>
 
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 
+<!-- Controls: left & right only -->
+
 <div id="controls">
   <button class="ctrl" id="left">←</button>
   <button class="ctrl" id="right">→</button>
-  <button class="ctrl" id="accel">▲</button>
-  <button class="ctrl" id="brake">■</button>
+</div>
+
+<!-- Item collection screen -->
+
+<div id="item-screen">
+  <h2>🏍️ Trước khi lên đường…<br>hãy chuẩn bị đầy đủ!</h2>
+  <p>Nhấn vào từng vật phẩm để nhặt lên, rồi mới bắt đầu nhé!</p>
+  <div class="item-row">
+    <div class="item-box" id="item-helmet" onclick="collectItem('helmet')">
+      <div class="icon">⛑️</div>
+      <div class="label">Mũ bảo hiểm</div>
+    </div>
+    <div class="item-box" id="item-license" onclick="collectItem('license')">
+      <div class="icon">🪪</div>
+      <div class="label">Bằng lái xe</div>
+    </div>
+  </div>
+  <button id="start-btn" onclick="startGame()">🚀 Xuất phát!</button>
 </div>
 
 <!-- Quiz UI -->
@@ -190,92 +193,87 @@ cursor: pointer;
   <div id="quiz-choices"></div>
 </div>
 
-<!-- Goal / Game over -->
+<!-- End screen -->
 
 <div id="end-overlay">
   <div id="end-title"></div>
   <div id="end-msg"></div>
   <div id="end-score"></div>
-  <button id="restart-btn" onclick="restartGame()">もういちど！</button>
+  <button id="restart-btn" onclick="restartGame()">Chơi lại!</button>
 </div>
 
 <script>
 // ===== QUIZ DATA =====
 const QUIZZES = [
-  {
-    sign: "🔴",
-    question: "赤い丸の標識は何を意味する？",
-    choices: ["止まれ", "進め", "ゆっくり走れ", "追い越し禁止"],
-    answer: 0,
-    hint: "赤は「止まれ」のサイン！"
-  },
-  {
-    sign: "🚸",
-    question: "この標識がある場所では？",
-    choices: ["スピードアップ", "子どもに注意してゆっくり走る", "クラクションを鳴らす", "追い越しOK"],
-    answer: 1,
-    hint: "子どもが飛び出すかも！ゆっくりね。"
-  },
-  {
-    sign: "🚑",
-    question: "救急車が来たらどうする？",
-    choices: ["一緒に走る", "追い越す", "道の左に寄って止まる", "クラクションを鳴らす"],
-    answer: 2,
-    hint: "緊急車両には道を譲ろう！"
-  },
-  {
-    sign: "⛔",
-    question: "この標識がある道は？",
-    choices: ["自転車だけ通れる", "車も自転車も通行禁止", "歩行者専用", "駐車禁止"],
-    answer: 1,
-    hint: "通行禁止！進入してはいけないよ。"
-  },
-  {
-    sign: "🚦",
-    question: "信号が黄色になったらどうする？",
-    choices: ["急いで渡る", "スピードアップ", "止まれる場合は止まる", "無視する"],
-    answer: 2,
-    hint: "黄色は「注意」。止まれるなら止まろう！"
-  },
-  {
-    sign: "🛑",
-    question: "一時停止の標識を見たらどうする？",
-    choices: ["ゆっくり通る", "必ず止まって左右を確認", "止まらなくていい", "クラクションだけ鳴らす"],
-    answer: 1,
-    hint: "一時停止は必ず止まること！"
-  },
-  {
-    sign: "🚶",
-    question: "横断歩道に歩行者がいたら？",
-    choices: ["先に通る", "クラクションで追い払う", "止まって歩行者を先に通す", "スピードアップして避ける"],
-    answer: 2,
-    hint: "歩行者が優先！必ず止まって待とう。"
-  },
-  {
-    sign: "⚡",
-    question: "スクールゾーンでの最高速度は？",
-    choices: ["60km/h", "40km/h", "30km/h", "制限なし"],
-    answer: 2,
-    hint: "スクールゾーンは30km/h以下！"
-  }
+  { sign:"🔴", question:"Biển báo hình tròn màu đỏ có nghĩa là gì?",
+    choices:["Dừng lại","Đi tiếp","Đi chậm thôi","Cấm vượt"],
+    answer:0, hint:"Màu đỏ là tín hiệu DỪNG LẠI!" },
+  { sign:"🚸", question:"Khi thấy biển báo này, em phải làm gì?",
+    choices:["Tăng tốc","Chú ý trẻ em và đi chậm lại","Bấm còi","Được phép vượt"],
+    answer:1, hint:"Cẩn thận! Trẻ em có thể chạy ra đường bất ngờ!" },
+  { sign:"🚑", question:"Khi xe cứu thương đến, em phải làm gì?",
+    choices:["Chạy cùng tốc độ","Vượt qua xe","Tấp vào lề và dừng lại","Bấm còi"],
+    answer:2, hint:"Hãy nhường đường cho xe cứu thương!" },
+  { sign:"⛔", question:"Biển báo này có nghĩa là gì?",
+    choices:["Chỉ xe đạp được đi","Cấm tất cả xe cộ","Chỉ người đi bộ","Cấm đỗ xe"],
+    answer:1, hint:"Cấm vào! Không được đi vào đường này!" },
+  { sign:"🚦", question:"Khi đèn giao thông chuyển sang màu vàng, em phải làm gì?",
+    choices:["Vội vàng vượt qua","Tăng tốc","Dừng lại nếu có thể","Bỏ qua"],
+    answer:2, hint:"Màu vàng là cảnh báo. Hãy dừng lại nếu có thể!" },
+  { sign:"🛑", question:"Khi thấy biển báo DỪNG, em phải làm gì?",
+    choices:["Đi chậm qua","Dừng hẳn và nhìn trái phải","Không cần dừng","Chỉ bấm còi"],
+    answer:1, hint:"Biển DỪNG nghĩa là phải dừng hẳn lại!" },
+  { sign:"🚶", question:"Khi có người đang qua đường, em phải làm gì?",
+    choices:["Đi trước","Bấm còi đuổi","Dừng và nhường người đi bộ","Tăng tốc tránh"],
+    answer:2, hint:"Người đi bộ được ưu tiên! Hãy dừng lại và chờ!" },
+  { sign:"⚡", question:"Tốc độ tối đa gần trường học là bao nhiêu?",
+    choices:["60 km/h","40 km/h","30 km/h","Không giới hạn"],
+    answer:2, hint:"Gần trường học phải đi dưới 30 km/h!" }
 ];
+
+// ===== ITEM COLLECTION =====
+const collected = { helmet:false, license:false };
+
+function collectItem(id) {
+  if (collected[id]) return;
+  collected[id] = true;
+  const box = document.getElementById('item-'+id);
+  box.classList.add('got');
+  box.querySelector('.label').textContent = id==='helmet' ? '✅ Đã đội!' : '✅ Đã có!';
+  if (collected.helmet && collected.license)
+    document.getElementById('start-btn').classList.add('ready');
+}
+
+function startGame() {
+  document.getElementById('item-screen').style.display = 'none';
+  game.beginPlay();
+}
+
+function restartGame() {
+  collected.helmet = false; collected.license = false;
+  ['helmet','license'].forEach(id=>{
+    const box = document.getElementById('item-'+id);
+    box.classList.remove('got');
+    box.querySelector('.label').textContent = id==='helmet' ? 'Mũ bảo hiểm' : 'Bằng lái xe';
+  });
+  document.getElementById('start-btn').classList.remove('ready');
+  document.getElementById('item-screen').style.display = 'flex';
+  game.reset();
+}
 
 // ===== INPUT =====
 class InputManager {
-  constructor() {
-    this.keys = {};
-    this.bind();
-  }
+  constructor() { this.keys={}; this.bind(); }
   bind() {
-    window.addEventListener('keydown', e => this.keys[e.code] = true);
-    window.addEventListener('keyup', e => this.keys[e.code] = false);
-    const map = { left:'ArrowLeft', right:'ArrowRight', accel:'ArrowUp', brake:'Space' };
-    Object.entries(map).forEach(([id, key]) => {
+    window.addEventListener('keydown', e=>this.keys[e.code]=true);
+    window.addEventListener('keyup',   e=>this.keys[e.code]=false);
+    [['left','ArrowLeft'],['right','ArrowRight']].forEach(([id,key])=>{
       const el = document.getElementById(id);
-      el.addEventListener('touchstart', e => { e.preventDefault(); this.keys[key] = true; });
-      el.addEventListener('touchend', e => { e.preventDefault(); this.keys[key] = false; });
-      el.addEventListener('mousedown', () => this.keys[key] = true);
-      el.addEventListener('mouseup', () => this.keys[key] = false);
+      if (!el) return;
+      el.addEventListener('touchstart', e=>{e.preventDefault(); this.keys[key]=true;});
+      el.addEventListener('touchend',   e=>{e.preventDefault(); this.keys[key]=false;});
+      el.addEventListener('mousedown', ()=>this.keys[key]=true);
+      el.addEventListener('mouseup',   ()=>this.keys[key]=false);
     });
   }
 }
@@ -283,476 +281,400 @@ class InputManager {
 // ===== AUDIO =====
 class AudioManager {
   constructor() {
-    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-    this.lastNote = 0;
-    this.melody = [261,293,329,349,392,329,261,392];
+    try { this.ctx=new(window.AudioContext||window.webkitAudioContext)(); } catch(e){}
+    this.lastNote=0; this.melody=[261,293,329,349,392,329,261,392];
   }
-  unlock() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
-  play(freq, duration=0.2, vol=0.1) {
-    if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.frequency.value = freq;
-    gain.gain.value = vol;
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + duration);
+  unlock(){ if(this.ctx&&this.ctx.state==='suspended') this.ctx.resume(); }
+  play(freq,dur=0.2,vol=0.1){
+    if(!this.ctx) return;
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.frequency.value=freq; g.gain.value=vol;
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(); o.stop(this.ctx.currentTime+dur);
   }
-  playSiren() { this.play(800,0.1,0.1); setTimeout(()=>this.play(1000,0.1,0.1),100); }
-  playCorrect() { [523,659,784].forEach((f,i) => setTimeout(()=>this.play(f,0.15,0.12),i*100)); }
-  playWrong() { this.play(150,0.4,0.2); }
-  playGoal() { [523,659,784,1047].forEach((f,i) => setTimeout(()=>this.play(f,0.3,0.15),i*150)); }
-  updateBGM() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    if (now - this.lastNote > 0.4) {
-      const i = Math.floor(now / 0.4) % this.melody.length;
-      this.play(this.melody[i], 0.25, 0.04);
-      this.lastNote = now;
+  playSiren()  { this.play(800,0.1,0.1); setTimeout(()=>this.play(1000,0.1,0.1),100); }
+  playCorrect(){ [523,659,784].forEach((f,i)=>setTimeout(()=>this.play(f,0.15,0.12),i*100)); }
+  playWrong()  { this.play(150,0.4,0.2); }
+  playGoal()   { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.play(f,0.3,0.15),i*150)); }
+  playStop()   { this.play(220,0.25,0.15); }
+  updateBGM(){
+    if(!this.ctx) return;
+    const now=this.ctx.currentTime;
+    if(now-this.lastNote>0.4){
+      const i=Math.floor(now/0.4)%this.melody.length;
+      this.play(this.melody[i],0.25,0.04); this.lastNote=now;
     }
   }
 }
 
 // ===== TRAFFIC LIGHT =====
 class TrafficLight {
-  constructor(y) {
-    this.y = y;
-    this.state = "red";
-    this.timer = 0;
-    this.stopLineOffset = 130;
+  constructor(y){ this.y=y; this.state="red"; this.timer=0; this.stopLineOffset=130; }
+  update(scrollSpeed){
+    this.y+=scrollSpeed; this.timer++;
+    if(this.state==="red"   &&this.timer>280){this.state="green";this.timer=0;}
+    else if(this.state==="green"&&this.timer>200){this.state="red";this.timer=0;}
   }
-  update(speed) {
-    this.y += speed;
-    this.timer++;
-    if (this.state === "red" && this.timer > 280) { this.state = "green"; this.timer = 0; }
-    else if (this.state === "green" && this.timer > 200) { this.state = "red"; this.timer = 0; }
+  draw(ctx){
+    ctx.fillStyle="#222"; ctx.fillRect(340,this.y,30,80);
+    ctx.fillStyle=this.state==="red"?"red":"#444";
+    ctx.beginPath();ctx.arc(355,this.y+20,10,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=this.state==="green"?"#0f0":"#444";
+    ctx.beginPath();ctx.arc(355,this.y+60,10,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=10;
+    ctx.beginPath();ctx.moveTo(0,this.y+this.stopLineOffset);ctx.lineTo(400,this.y+this.stopLineOffset);ctx.stroke();
   }
-  draw(ctx) {
-    ctx.fillStyle = "#222";
-    ctx.fillRect(340, this.y, 30, 80);
-    ctx.fillStyle = this.state === "red" ? "red" : "#444";
-    ctx.beginPath(); ctx.arc(355, this.y+20, 10, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = this.state === "green" ? "#0f0" : "#444";
-    ctx.beginPath(); ctx.arc(355, this.y+60, 10, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
-    ctx.beginPath(); ctx.moveTo(0, this.y + this.stopLineOffset); ctx.lineTo(400, this.y + this.stopLineOffset); ctx.stroke();
+  // True when stop-line is about to reach player and light is red
+  shouldAutoStop(playerY){
+    const lineY=this.y+this.stopLineOffset;
+    return this.state==="red" && lineY>=playerY-55 && lineY<=playerY+5;
   }
-  isViolation(playerY, speed) {
-    const lineY = this.y + this.stopLineOffset;
-    return this.state === "red" && lineY > playerY - 50 && lineY < playerY + 30 && speed > 0.5;
-  }
-  isPassed() { return this.y > 650; }
-  reset(y) { this.y = y; this.state = "red"; this.timer = 0; }
+  isPassed(){ return this.y>650; }
+  reset(y){ this.y=y; this.state="red"; this.timer=0; }
 }
 
 // ===== SIGN QUIZ =====
 class SignQuiz {
-  constructor(y, quizIndex) {
-    this.y = y;
-    this.x = 60;
-    this.quiz = QUIZZES[quizIndex % QUIZZES.length];
-    this.active = false;
-    this.passed = false;
-    this.triggered = false;
+  constructor(y,idx){
+    this.y=y; this.x=55;
+    this.quiz=QUIZZES[idx%QUIZZES.length];
+    this.passed=false; this.triggered=false;
   }
-  update(speed) { this.y += speed; }
-  draw(ctx) {
-    if (this.passed || this.triggered) return;
+  update(speed){ this.y+=speed; }
+  draw(ctx){
+    if(this.passed||this.triggered) return;
     ctx.save();
-    ctx.font = "36px serif";
-    ctx.fillText(this.quiz.sign, this.x - 18, this.y);
-    ctx.strokeStyle = "#FFD700";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(this.x - 22, this.y - 36, 44, 44);
+    ctx.fillStyle="#FFD700"; ctx.strokeStyle="#b8860b"; ctx.lineWidth=2;
+    roundRect(ctx,this.x-24,this.y-38,48,48,8); ctx.fill(); ctx.stroke();
+    ctx.font="30px serif"; ctx.textAlign="center";
+    ctx.fillText(this.quiz.sign,this.x,this.y-10);
     ctx.restore();
   }
-  shouldTrigger(playerY) {
-    return !this.triggered && Math.abs(this.y - playerY) < 80;
-  }
-  isOffScreen() { return this.y > 700; }
+  shouldTrigger(playerY){ return !this.triggered&&Math.abs(this.y-playerY)<70; }
+  isOffScreen(){ return this.y>700; }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
 }
 
 // ===== SCHOOL GOAL =====
 class SchoolGoal {
-  constructor(distanceTotal) {
-    this.distanceTotal = distanceTotal;
-    this.reached = false;
-  }
-  draw(ctx, progress) {
-    // Draw school building in the distance (shrinks as you approach)
-    const scale = 0.4 + progress * 0.6;
-    const yPos = 60 - progress * 20;
+  draw(ctx,progress){
+    const scale=0.3+progress*0.7;
+    const yPos=55-progress*15;
     ctx.save();
-    ctx.globalAlpha = 0.7 + progress * 0.3;
-    ctx.font = `${Math.floor(40 * scale)}px serif`;
-    ctx.textAlign = "center";
-    ctx.fillText("🏫", 200, yPos + 40 * scale);
-    if (progress > 0.5) {
-      ctx.font = "bold 16px 'Nunito', sans-serif";
-      ctx.fillStyle = "#FFD700";
-      ctx.fillText("🎉 もうすぐゴール！", 200, yPos + 40 * scale + 30);
+    ctx.globalAlpha=0.6+progress*0.4;
+    ctx.font=`${Math.floor(44*scale)}px serif`;
+    ctx.textAlign="center";
+    ctx.fillText("🏫",200,yPos+44*scale);
+    if(progress>0.55){
+      ctx.font="bold 14px 'Nunito',sans-serif";
+      ctx.fillStyle="#FFD700"; ctx.globalAlpha=1;
+      ctx.fillText("🎉 Sắp đến trường rồi!",200,yPos+44*scale+26);
     }
     ctx.restore();
   }
 }
 
+// ===== GAME CONSTANTS =====
+const AUTO_SPEED  = 3.2;   // scroll speed (≈ 32 km/h on display)
+const MAX_KMH     = 40;
+const PLAYER_Y    = 370;   // higher on screen
+
 // ===== GAME =====
 class Game {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+  constructor(canvas){
+    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+    this.input=new InputManager();
+    this.audio=new AudioManager();
+    this.playing=false;
+    this.score=100;
     this.reset();
-    this.input = new InputManager();
-    this.audio = new AudioManager();
   }
 
-  reset() {
-    this.player = { x: 200, y: 500 };
-    this.speed = 0;
-    this.score = 100;
-    this.offset = 0;
+  reset(){
+    this.player    = { x:200, y:PLAYER_Y };
+    this.speed     = 0;
+    this.offset    = 0;
+    this.distance  = 0;
+    this.goalDistance = 3200;
+    this.score     = 100;
 
-    // Progress: 0 → 1 = goal
-    this.distance = 0;
-    this.goalDistance = 3000;
+    this.npcs=[]; this.spawnTimer=0;
+    this.signs=[]; this.signTimer=0; this.signCount=0;
 
-    this.npcs = [];
-    this.spawnTimer = 0;
-
-    this.notice = "";
-    this.noticeTimer = 0;
-    this.noticeColor = "yellow";
-
-    this.light = new TrafficLight(-800);
-
-    this.crashed = false;
-    this.crashTimer = 0;
-    this.shakePower = 0;
-    this.particles = [];
-
-    this.ambulance = null;
-
-    // Quiz
-    this.signs = [];
-    this.signTimer = 0;
-    this.signCount = 0;
-    this.quizActive = false;
-    this.pendingQuiz = null;
-
-    // Goal
-    this.goal = new SchoolGoal(this.goalDistance);
-    this.goalReached = false;
-    this.gameOver = false;
+    this.notice=''; this.noticeTimer=0; this.noticeColor='yellow';
+    this.light = new TrafficLight(-900);
+    this.crashed=false; this.crashTimer=0; this.shakePower=0; this.particles=[];
+    this.ambulance=null;
+    this.quizActive=false; this.pendingSign=null;
+    this.goal=new SchoolGoal();
+    this.goalReached=false;
+    this.redStopped=false;
 
     document.getElementById('quiz-overlay').classList.remove('active');
     document.getElementById('end-overlay').classList.remove('active');
+    this.render(); // show static frame
   }
 
-  start() {
-    document.addEventListener('click', () => this.audio.unlock(), { once: true });
-    if (!this._looping) {
-      this._looping = true;
-      this._loop();
-    }
+  beginPlay(){
+    this.playing=true;
+    document.addEventListener('click',()=>this.audio.unlock(),{once:true});
+    if(!this._looping){ this._looping=true; this._loop(); }
   }
 
-  _loop() {
-    this.update();
-    this.render();
-    requestAnimationFrame(() => this._loop());
-  }
+  _loop(){ this.update(); this.render(); requestAnimationFrame(()=>this._loop()); }
 
-  spawnNPC() {
+  spawnNPC(){
+    if(!this.playing) return;
     this.spawnTimer++;
-    if (this.spawnTimer > 70) {
-      this.npcs.push({ x: 110 + Math.random() * 180, y: -80, baseSpeed: 1 + Math.random() * 2, currentSpeed: 0 });
-      this.spawnTimer = 0;
+    if(this.spawnTimer>80){
+      this.npcs.push({x:120+Math.random()*160,y:-80,baseSpeed:1.2+Math.random()*1.5,currentSpeed:0});
+      this.spawnTimer=0;
     }
   }
 
-  spawnSign() {
+  spawnSign(){
+    if(!this.playing) return;
     this.signTimer++;
-    const interval = Math.max(200, 400 - this.signCount * 10);
-    if (this.signTimer > interval && this.distance < this.goalDistance * 0.92) {
-      this.signs.push(new SignQuiz(-150, this.signCount));
-      this.signCount++;
-      this.signTimer = 0;
+    const interval=Math.max(220,420-this.signCount*10);
+    if(this.signTimer>interval&&this.distance<this.goalDistance*0.92){
+      this.signs.push(new SignQuiz(-160,this.signCount));
+      this.signCount++; this.signTimer=0;
     }
   }
 
-  spawnAmbulance() {
-    if (this.ambulance || Math.random() > 0.002) return;
-    this.ambulance = { x: this.player.x, y: this.player.y + 200, speed: 6 };
-    this.showNotice("🚑 救急車！道を譲れ！", "#FF6B6B");
+  spawnAmbulance(){
+    if(!this.playing||this.ambulance||Math.random()>0.0015) return;
+    this.ambulance={x:this.player.x,y:this.player.y+220,speed:6};
+    this.showNotice("🚑 Xe cứu thương! Tấp vào lề!","#FF6B6B");
   }
 
-  triggerCrash(npc) {
-    this.crashed = true;
-    this.crashTimer = 100;
-    this.speed = 0;
-    this.score = Math.max(0, this.score - 30);
-    this.audio.play(80, 0.5, 0.3);
-    this.showNotice("💥 ぶつかった！-30点", "#FF6B6B");
-    this.shakePower = 10;
-    for (let i = 0; i < 15; i++) {
-      this.particles.push({ x: this.player.x, y: this.player.y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 30 });
-    }
-    if (npc) npc.currentSpeed = 0;
+  triggerCrash(npc){
+    if(this.crashed) return;
+    this.crashed=true; this.crashTimer=90; this.speed=0;
+    this.score=Math.max(0,this.score-30);
+    this.audio.play(80,0.5,0.3);
+    this.showNotice("💥 Va chạm rồi! -30 điểm","#FF6B6B");
+    this.shakePower=10;
+    for(let i=0;i<15;i++)
+      this.particles.push({x:this.player.x,y:this.player.y,
+        vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,life:30});
+    if(npc) npc.currentSpeed=0;
   }
 
-  showNotice(msg, color = "yellow") {
-    this.notice = msg;
-    this.noticeTimer = 90;
-    this.noticeColor = color;
-  }
+  showNotice(msg,color='yellow'){ this.notice=msg; this.noticeTimer=100; this.noticeColor=color; }
 
-  openQuiz(sign) {
-    this.quizActive = true;
-    this.pendingSign = sign;
-    sign.triggered = true;
-    this.speed = 0;
-
-    const q = sign.quiz;
-    document.getElementById('quiz-sign').textContent = q.sign;
-    document.getElementById('quiz-question').textContent = q.question;
-
-    const choicesEl = document.getElementById('quiz-choices');
-    choicesEl.innerHTML = '';
-    q.choices.forEach((c, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'quiz-btn';
-      btn.textContent = c;
-      btn.onclick = () => this.answerQuiz(i, btn, q);
-      choicesEl.appendChild(btn);
+  openQuiz(sign){
+    this.quizActive=true; this.pendingSign=sign;
+    sign.triggered=true; this.speed=0;
+    const q=sign.quiz;
+    document.getElementById('quiz-sign').textContent=q.sign;
+    document.getElementById('quiz-question').textContent=q.question;
+    const el=document.getElementById('quiz-choices');
+    el.innerHTML='';
+    q.choices.forEach((c,i)=>{
+      const btn=document.createElement('button');
+      btn.className='quiz-btn'; btn.textContent=c;
+      btn.onclick=()=>this.answerQuiz(i,btn,q);
+      el.appendChild(btn);
     });
-
     document.getElementById('quiz-overlay').classList.add('active');
   }
 
-  answerQuiz(index, btn, q) {
-    const btns = document.querySelectorAll('.quiz-btn');
-    btns.forEach(b => b.onclick = null);
-
-    if (index === q.answer) {
-      btn.classList.add('correct');
-      this.score += 20;
+  answerQuiz(index,btn,q){
+    const btns=document.querySelectorAll('.quiz-btn');
+    btns.forEach(b=>b.onclick=null);
+    if(index===q.answer){
+      btn.classList.add('correct'); this.score+=20;
       this.audio.playCorrect();
-      this.showNotice("⭐ 正解！+20点 " + q.hint, "#00e676");
+      this.showNotice("⭐ Đúng rồi! +20 điểm  "+q.hint,"#00e676");
     } else {
-      btn.classList.add('wrong');
-      btns[q.answer].classList.add('correct');
-      this.score = Math.max(0, this.score - 10);
+      btn.classList.add('wrong'); btns[q.answer].classList.add('correct');
+      this.score=Math.max(0,this.score-10);
       this.audio.playWrong();
-      this.showNotice("❌ 不正解！-10点 " + q.hint, "#FF6B6B");
+      this.showNotice("❌ Sai rồi! -10 điểm  "+q.hint,"#FF6B6B");
     }
-
-    setTimeout(() => {
+    setTimeout(()=>{
       document.getElementById('quiz-overlay').classList.remove('active');
-      this.quizActive = false;
-      this.pendingSign.passed = true;
-    }, 1500);
+      this.quizActive=false; this.pendingSign.passed=true;
+    },1600);
   }
 
-  showGoal() {
-    this.goalReached = true;
-    this.audio.playGoal();
-    const el = document.getElementById('end-overlay');
-    document.getElementById('end-title').textContent = "🏫 ゴール！";
-    document.getElementById('end-msg').textContent = "学校に無事に到着したよ！交通ルールをしっかり守れたね！";
-    document.getElementById('end-score').textContent = "最終スコア: " + this.score + "点";
-    el.classList.add('active');
+  showGoal(){
+    this.goalReached=true; this.audio.playGoal();
+    document.getElementById('end-title').textContent="🏫 Đến trường rồi!";
+    document.getElementById('end-msg').textContent="Bạn đã đến trường an toàn! Bạn đã tuân thủ luật giao thông rất tốt!";
+    document.getElementById('end-score').textContent="Điểm cuối: "+this.score+" điểm";
+    document.getElementById('end-overlay').classList.add('active');
   }
 
-  update() {
-    if (this.goalReached || this.quizActive) return;
+  update(){
+    if(!this.playing||this.goalReached||this.quizActive) return;
+    const keys=this.input.keys;
 
-    const keys = this.input.keys;
-
-    if (this.crashed) {
+    // Crash cooldown → auto resume
+    if(this.crashed){
       this.crashTimer--;
-      if (this.crashTimer <= 0) this.crashed = false;
+      if(this.crashTimer<=0){ this.crashed=false; this.speed=AUTO_SPEED; }
     }
 
-    if (!this.crashed) {
-      if (keys['ArrowUp']) this.speed += 0.2;
-      else if (keys['Space']) this.speed -= 0.4;
-      else this.speed *= 0.98;
-    }
-
-    this.speed = Math.max(0, Math.min(this.speed, 8));
-
-    if (keys['ArrowLeft']) this.player.x = Math.max(20, this.player.x - 4);
-    if (keys['ArrowRight']) this.player.x = Math.min(380, this.player.x + 4);
-
-    this.offset += this.speed;
-    this.distance += this.speed;
-
-    // Check goal
-    if (this.distance >= this.goalDistance && !this.goalReached) {
-      this.showGoal();
-      return;
-    }
-
-    this.spawnNPC();
-    this.spawnSign();
-    this.spawnAmbulance();
-
-    const lightLine = this.light.y + this.light.stopLineOffset;
-
-    this.npcs.forEach((n, i) => {
-      const approaching = n.y < lightLine - 20 && n.y > lightLine - 120;
-      if (this.light.state === "red" && approaching) n.currentSpeed *= 0.9;
-      else n.currentSpeed += (n.baseSpeed - n.currentSpeed) * 0.05;
-
-      const front = this.npcs[i - 1];
-      if (front && Math.abs(n.y - front.y) < 60) n.currentSpeed = Math.min(n.currentSpeed, front.currentSpeed);
-
-      n.y += n.currentSpeed + this.speed * 0.5;
-
-      if (!this.crashed && Math.abs(this.player.x - n.x) < 40 && Math.abs(this.player.y - n.y) < 50) {
-        this.triggerCrash(n);
+    // Auto-drive + red-light auto-stop
+    if(!this.crashed){
+      if(this.redStopped){
+        this.speed=0;
+        if(this.light.state==="green"){
+          this.redStopped=false; this.speed=AUTO_SPEED;
+          this.showNotice("🟢 Đèn xanh! Đi thôi!","#00e676");
+        }
+      } else {
+        if(this.light.shouldAutoStop(this.player.y)){
+          this.redStopped=true; this.speed=0;
+          this.audio.playStop();
+          this.showNotice("🔴 Đèn đỏ - Dừng lại!","#FF6B6B");
+        } else {
+          this.speed=AUTO_SPEED;
+        }
       }
-    });
-
-    this.npcs = this.npcs.filter(n => n.y < 700);
-
-    // Traffic light
-    this.light.update(this.speed);
-    if (this.light.isViolation(this.player.y, this.speed)) {
-      this.speed = 0;
-      this.showNotice("🔴 赤信号！止まれ！", "#FF6B6B");
-      this.audio.play(120, 0.3, 0.2);
     }
-    if (this.light.isPassed()) this.light.reset(-1200);
+
+    // Left / Right
+    if(keys['ArrowLeft'])  this.player.x=Math.max(30, this.player.x-4);
+    if(keys['ArrowRight']) this.player.x=Math.min(370,this.player.x+4);
+
+    this.offset+=this.speed; this.distance+=this.speed;
+
+    if(this.distance>=this.goalDistance&&!this.goalReached){ this.showGoal(); return; }
+
+    this.spawnNPC(); this.spawnSign(); this.spawnAmbulance();
+
+    // Traffic light scroll
+    this.light.update(this.speed);
+    if(this.light.isPassed()){ this.light.reset(-1300); this.redStopped=false; }
+
+    // NPCs
+    const lightLine=this.light.y+this.light.stopLineOffset;
+    this.npcs.forEach((n,i)=>{
+      const approaching=n.y<lightLine-20&&n.y>lightLine-120;
+      if(this.light.state==="red"&&approaching) n.currentSpeed*=0.9;
+      else n.currentSpeed+=(n.baseSpeed-n.currentSpeed)*0.05;
+      const front=this.npcs[i-1];
+      if(front&&Math.abs(n.y-front.y)<60) n.currentSpeed=Math.min(n.currentSpeed,front.currentSpeed);
+      n.y+=n.currentSpeed+this.speed*0.5;
+      if(!this.crashed&&Math.abs(this.player.x-n.x)<38&&Math.abs(this.player.y-n.y)<46)
+        this.triggerCrash(n);
+    });
+    this.npcs=this.npcs.filter(n=>n.y<720);
 
     // Signs
-    this.signs.forEach(s => {
-      s.update(this.speed);
-      if (s.shouldTrigger(this.player.y)) {
-        this.openQuiz(s);
-      }
-    });
-    this.signs = this.signs.filter(s => !s.isOffScreen() || !s.passed);
+    this.signs.forEach(s=>{ s.update(this.speed); if(s.shouldTrigger(this.player.y)) this.openQuiz(s); });
+    this.signs=this.signs.filter(s=>!(s.isOffScreen()&&s.passed));
 
     // Ambulance
-    if (this.ambulance) {
-      const a = this.ambulance;
-      a.y -= a.speed;
-      if (Math.random() < 0.05) this.audio.playSiren();
-      const givingWay = this.player.x < 110 || this.player.x > 290;
-      if (!givingWay && Math.abs(this.player.y - a.y) < 80) {
-        this.score = Math.max(0, this.score - 20);
-        this.showNotice("❗ 道を譲れ！-20点", "#FF6B6B");
+    if(this.ambulance){
+      const a=this.ambulance;
+      a.y-=a.speed;
+      if(Math.random()<0.05) this.audio.playSiren();
+      const givingWay=this.player.x<110||this.player.x>290;
+      if(!givingWay&&Math.abs(this.player.y-a.y)<80){
+        this.score=Math.max(0,this.score-20);
+        this.showNotice("❗ Nhường đường! -20 điểm","#FF6B6B");
       }
-      if (a.y < -100) this.ambulance = null;
+      if(a.y<-120) this.ambulance=null;
     }
 
-    // Particles
-    this.particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life--; });
-    this.particles = this.particles.filter(p => p.life > 0);
-
-    if (this.noticeTimer > 0) this.noticeTimer--;
-    if (this.shakePower > 0) this.shakePower *= 0.85;
-
+    this.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+    this.particles=this.particles.filter(p=>p.life>0);
+    if(this.noticeTimer>0) this.noticeTimer--;
+    if(this.shakePower>0)  this.shakePower*=0.85;
     this.audio.updateBGM();
   }
 
-  render() {
-    const ctx = this.ctx;
-    const shakeX = (Math.random() - 0.5) * this.shakePower;
-    const shakeY = (Math.random() - 0.5) * this.shakePower;
+  render(){
+    const ctx=this.ctx;
+    const sx=(Math.random()-0.5)*this.shakePower;
+    const sy=(Math.random()-0.5)*this.shakePower;
 
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
+    ctx.save(); ctx.translate(sx,sy);
 
-    // Sky/ground
-    ctx.fillStyle = "#87CEEB";
-    ctx.fillRect(0, 0, 400, 80);
-    ctx.fillStyle = "#4CAF50";
-    ctx.fillRect(0, 80, 400, 520);
-
+    // Sky
+    ctx.fillStyle="#87CEEB"; ctx.fillRect(0,0,400,90);
+    // Grass
+    ctx.fillStyle="#4CAF50"; ctx.fillRect(0,90,400,510);
     // Road
-    ctx.fillStyle = "#546E7A";
-    ctx.beginPath();
-    ctx.moveTo(80, 80);
-    ctx.lineTo(320, 80);
-    ctx.lineTo(400, 600);
-    ctx.lineTo(0, 600);
-    ctx.fill();
-
-    // Lane markings
-    ctx.strokeStyle = "#fff";
-    ctx.setLineDash([30, 40]);
-    ctx.lineDashOffset = -this.offset;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(200, 80);
-    ctx.lineTo(200, 600);
-    ctx.stroke();
+    ctx.fillStyle="#546E7A";
+    ctx.beginPath(); ctx.moveTo(90,90); ctx.lineTo(310,90);
+    ctx.lineTo(400,600); ctx.lineTo(0,600); ctx.fill();
+    // Lane dashes
+    ctx.strokeStyle="#fff"; ctx.setLineDash([28,38]);
+    ctx.lineDashOffset=-this.offset; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(200,90); ctx.lineTo(200,600); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Goal school (draws in perspective at top)
-    const progress = Math.min(1, this.distance / this.goalDistance);
-    this.goal.draw(ctx, progress);
+    // Goal school in distance
+    const progress=Math.min(1,this.distance/this.goalDistance);
+    this.goal.draw(ctx,progress);
 
     // Traffic light
     this.light.draw(ctx);
 
     // Signs
-    this.signs.forEach(s => s.draw(ctx));
+    this.signs.forEach(s=>s.draw(ctx));
 
     // NPCs
-    ctx.font = "38px serif";
-    this.npcs.forEach(n => ctx.fillText("🚗", n.x - 19, n.y));
+    ctx.font="36px serif"; ctx.textAlign="center";
+    this.npcs.forEach(n=>ctx.fillText("🚗",n.x,n.y));
 
     // Ambulance
-    if (this.ambulance) {
-      ctx.font = "48px serif";
-      ctx.fillText("🚑", this.ambulance.x - 24, this.ambulance.y);
+    if(this.ambulance){
+      ctx.font="46px serif"; ctx.textAlign="center";
+      ctx.fillText("🚑",this.ambulance.x,this.ambulance.y);
     }
 
     // Player
-    ctx.font = "46px serif";
-    ctx.fillText("🚲", this.player.x - 23, this.player.y);
+    ctx.font="44px serif"; ctx.textAlign="center";
+    ctx.fillText("🏍️",this.player.x,this.player.y);
+    // Helmet on rider
+    ctx.font="16px serif";
+    ctx.fillText("⛑️",this.player.x+20,this.player.y-26);
 
     // Particles
-    this.particles.forEach(p => {
-      ctx.fillStyle = "orange";
-      ctx.fillRect(p.x, p.y, 4, 4);
-    });
+    this.particles.forEach(p=>{ ctx.fillStyle="orange"; ctx.fillRect(p.x,p.y,4,4); });
 
     ctx.restore();
 
     // Notice
-    if (this.noticeTimer > 0) {
-      ctx.save();
-      ctx.textAlign = "center";
-      ctx.font = "bold 18px 'Nunito', sans-serif";
-      ctx.fillStyle = this.noticeColor;
-      ctx.shadowColor = "#000";
-      ctx.shadowBlur = 6;
-      ctx.fillText(this.notice, 200, 120);
+    if(this.noticeTimer>0){
+      ctx.save(); ctx.textAlign="center";
+      ctx.font="bold 16px 'Nunito',sans-serif";
+      ctx.fillStyle=this.noticeColor;
+      ctx.shadowColor="#000"; ctx.shadowBlur=6;
+      ctx.fillText(this.notice,200,155);
       ctx.restore();
     }
 
     // HUD
-    document.getElementById('score').textContent = "⭐ スコア: " + this.score;
-    document.getElementById('speed').textContent = Math.floor(this.speed * 10) + " km/h";
-    const pct = Math.min(100, Math.floor((this.distance / this.goalDistance) * 100));
-    document.getElementById('progress-bar').style.width = pct + "%";
-    document.getElementById('progress-label').textContent = `🏫 ゴールまで ${100 - pct}%`;
+    const kmh=this.playing&&!this.redStopped&&!this.crashed ? Math.min(MAX_KMH, Math.floor(AUTO_SPEED*12.5)) : 0;
+    document.getElementById('score').textContent       = "⭐ Điểm: "+this.score;
+    document.getElementById('items-hud').textContent   = "⛑️ 🪪";
+    document.getElementById('speed').textContent       = kmh+" km/h";
+    const pct=Math.min(100,Math.floor((this.distance/this.goalDistance)*100));
+    document.getElementById('progress-bar').style.width = pct+"%";
+    document.getElementById('progress-label').textContent = this.playing
+      ? `🏫 Còn ${100-pct}% nữa đến trường!`
+      : "🏫 Nhặt vật phẩm và xuất phát!";
   }
 }
 
-// ===== START =====
-let game;
-function restartGame() {
-  game.reset();
-}
-
-game = new Game(document.getElementById('gameCanvas'));
-game.start();
+// ===== BOOT =====
+const game = new Game(document.getElementById('gameCanvas'));
+game.render();
 </script>
 
 </body>
